@@ -14,7 +14,7 @@ LDSCRIPT   = palawan.ld
 DBG_CFLAGS = -ggdb -g -DDEBUG -Wall
 DBG_LFLAGS = -ggdb -g -Wall
 CFLAGS     = $(ADD_CFLAGS) \
-             -I. -Iinclude \
+             -I. -Iinclude -Igrainuum \
              -fsingle-precision-constant -Wall -Wextra \
              -mcpu=cortex-m0plus -mfloat-abi=soft -mthumb \
 						 -fno-builtin \
@@ -28,14 +28,14 @@ LFLAGS     = $(ADD_LFLAGS) $(CFLAGS) \
 
 OBJ_DIR    = .obj
 
-CSOURCES   = $(wildcard *.c)
-CPPSOURCES = $(wildcard *.cpp)
-ASOURCES   = $(wildcard *.S)
+CSOURCES   = $(wildcard *.c grainuum/*.c)
+CPPSOURCES = $(wildcard *.cpp  grainuum/*.cpp)
+ASOURCES   = $(wildcard *.S grainuum/*.S)
 COBJS      = $(addprefix $(OBJ_DIR)/, $(notdir $(CSOURCES:.c=.o)))
 CXXOBJS    = $(addprefix $(OBJ_DIR)/, $(notdir $(CPPSOURCES:.cpp=.o)))
 AOBJS      = $(addprefix $(OBJ_DIR)/, $(notdir $(ASOURCES:.S=.o)))
 OBJECTS    = $(COBJS) $(CXXOBJS) $(AOBJS)
-VPATH      = .
+VPATH      = . grainuum
 
 QUIET      = @
 
