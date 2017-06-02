@@ -1,11 +1,22 @@
 #include <stdint.h>
 #include "kl17.h"
 
-__attribute__((noreturn))
-void main(void) {
+extern void usbStart(void);
+void usbProcess(void (*received_data)(void *data, uint32_t size));
+
+static void received_data(void *data, uint32_t bytes)
+{
+  (void)data;
+  (void)bytes;
+}
+
+__attribute__((noreturn)) int main(void)
+{
 
   PORTB->PCR[1] = (1 << 8) | (1 << 2);
   FGPIOB->PDDR |= (1 << 1);
+  FGPIOB->PSOR = (1 << 1);
+  /*
   while (1) {
     FGPIOB->PTOR = (1 << 1);
 
@@ -20,4 +31,9 @@ void main(void) {
       }
     }
   }
+  */
+  usbStart();
+
+  while (1)
+    usbProcess(received_data);
 }
