@@ -1,4 +1,4 @@
-PACKAGE    = joyboot
+PACKAGE    = gameon
 LIBS       =
 VERSION    = v1.0
 ADD_CFLAGS =
