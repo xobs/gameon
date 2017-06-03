@@ -8,6 +8,7 @@ static void received_data(void *data, uint32_t bytes)
 {
   (void)data;
   (void)bytes;
+  FGPIOB->PTOR = (1 << 1);
 }
 
 __attribute__((noreturn)) int main(void)
