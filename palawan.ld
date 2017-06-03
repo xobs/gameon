@@ -84,6 +84,8 @@ SECTIONS
         *(.glue_7)
         *(.gcc*)
         *(.interp)
+        *(.ARM.exidx*)
+        *(.gnu.linkonce.armexidx.*)
     }
 
   /* ld.bfd will segfault without these */
