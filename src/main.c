@@ -1,5 +1,8 @@
 #include <stdint.h>
 #include "kl17.h"
+#include "spi.h"
+
+#include "radio.h"
 
 extern void usbStart(void);
 void usbProcess(void (*received_data)(void *data, uint32_t size));
@@ -23,6 +26,8 @@ __attribute__((noreturn)) void main(void)
   configure_led();
   spiInit();
   radioInit();
+
+  radioStart(radioDevice);
   /*
   while (1) {
     FGPIOB->PTOR = (1 << 1);
