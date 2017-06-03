@@ -23,19 +23,19 @@ CFLAGS     = $(ADD_CFLAGS) \
 CXXFLAGS   = $(CFLAGS) -std=c++11 -fno-rtti -fno-exceptions
 LFLAGS     = $(ADD_LFLAGS) $(CFLAGS) \
              -nostartfiles -nostdlib -nodefaultlibs \
-             -Wl,-Map=$(PROJECT).map,--gc-sections \
-             -Wl,--cref,--no-warn-mismatch,--script=$(LDSCRIPT),--build-id=none
+             -Wl,--gc-sections \
+             -Wl,--no-warn-mismatch,--script=$(LDSCRIPT),--build-id=none
 
 OBJ_DIR    = .obj
 
-CSOURCES   = $(wildcard *.c grainuum/*.c)
-CPPSOURCES = $(wildcard *.cpp  grainuum/*.cpp)
-ASOURCES   = $(wildcard *.S grainuum/*.S)
+CSOURCES   = $(wildcard src/*.c grainuum/*.c)
+CPPSOURCES = $(wildcard src/*.cpp  grainuum/*.cpp)
+ASOURCES   = $(wildcard src/*.S grainuum/*.S)
 COBJS      = $(addprefix $(OBJ_DIR)/, $(notdir $(CSOURCES:.c=.o)))
 CXXOBJS    = $(addprefix $(OBJ_DIR)/, $(notdir $(CPPSOURCES:.cpp=.o)))
 AOBJS      = $(addprefix $(OBJ_DIR)/, $(notdir $(ASOURCES:.S=.o)))
 OBJECTS    = $(COBJS) $(CXXOBJS) $(AOBJS)
-VPATH      = . grainuum
+VPATH      = src grainuum
 
 QUIET      = @
 
