@@ -11,12 +11,18 @@ static void received_data(void *data, uint32_t bytes)
   FGPIOB->PTOR = (1 << 1);
 }
 
-__attribute__((noreturn)) int main(void)
+static void configure_led(void)
 {
-
   PORTB->PCR[1] = (1 << 8) | (1 << 2);
   FGPIOB->PDDR |= (1 << 1);
   FGPIOB->PSOR = (1 << 1);
+}
+
+__attribute__((noreturn)) void main(void)
+{
+  configure_led();
+  spiInit();
+  radioInit();
   /*
   while (1) {
     FGPIOB->PTOR = (1 << 1);

@@ -391,7 +391,7 @@ void usbStart(void)
 
   /* Set up D+ and D- as slow-slew GPIOs (pin mux type 1), and enable IRQs */
   PORTB->PCR[5] = (1 << 8) | (0xb << 16) | (1 << 2);
-  PORTB->PCR[6] = (1 << 8) | (1 << 2);
+  PORTB->PCR[6] = (1 << 8) | (0xb << 16) | (1 << 2);
 
   grainuumInit(&defaultUsbPhy, &hid_link);
   grainuumDisconnect(&defaultUsbPhy);
