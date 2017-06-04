@@ -2,7 +2,7 @@ PACKAGE    = gameon
 LIBS       =
 VERSION    = v1.0
 ADD_CFLAGS =
-ADD_LFLAGS = lib/*.a
+ADD_LFLAGS =
 EXTRA_DIST =
 
 TRGT      ?= arm-none-eabi-
@@ -18,13 +18,14 @@ CFLAGS     = $(ADD_CFLAGS) \
              -fsingle-precision-constant -Wall -Wextra \
              -mcpu=cortex-m0plus -mfloat-abi=soft -mthumb \
 						 -fno-builtin -fno-unwind-tables \
+						 -fno-non-call-exceptions -fno-exceptions \
              -ffunction-sections -fdata-sections -fno-common \
-             -fomit-frame-pointer -falign-functions=16 -nostdlib -Os
-CXXFLAGS   = $(CFLAGS) -std=c++11 -fno-rtti -fno-exceptions
+             -fomit-frame-pointer -falign-functions=16 -Os
+CXXFLAGS   = $(CFLAGS) -std=c++11 -fno-rtti
 LFLAGS     = $(ADD_LFLAGS) $(CFLAGS) \
-             -nostartfiles -nostdlib -nodefaultlibs \
+             -nostartfiles \
              -Wl,--gc-sections \
-             -Wl,--no-warn-mismatch,--script=$(LDSCRIPT),--build-id=none
+             -Wl,--no-warn-mismatch,--script=$(LDSCRIPT),--build-id=none \
 
 OBJ_DIR    = .obj
 
