@@ -242,7 +242,7 @@ typedef struct
   __IO uint8_t  C2;
   __IO uint8_t  BR;
   __IO uint8_t  S;
-       uint8_t  RESERVD1;
+       uint8_t  RESERVED1;
   __IO uint8_t  D;
        uint8_t  RESERVED2;
   __IO uint8_t  M;
@@ -934,6 +934,13 @@ typedef struct
 /*             Serial Peripheral Interface (SPI)                */
 /*                                                              */
 /****************************************************************/
+#define SPI0_C1                     0x40076000
+#define SPI0_C2                     0x40076001
+#define SPI0_BR                     0x40076002
+#define SPI0_S                      0x40076003
+#define SPI0_D                      0x40076005
+#define SPI0_M                      0x40076007
+
 /***********  Bits definition for SPIx_S register  **************/
 #define SPIx_S_SPRF                  ((uint8_t)0x80)    /*!< SPI Read Buffer Full Flag */
 #define SPIx_S_SPMF                  ((uint8_t)0x40)    /*!< SPI Match Flag */

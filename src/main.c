@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include "kl17.h"
 #include "spi.h"
-
+#include "palawan.h"
 #include "radio.h"
 
 extern void usbStart(void);
@@ -28,6 +28,9 @@ __attribute__((noreturn)) void main(void)
   radioInit();
 
   radioStart(radioDevice);
+  if (palawanModel() == palawan_rx) {
+    radioSetAddress(radioDevice, 0);
+  }
   /*
   while (1) {
     FGPIOB->PTOR = (1 << 1);
@@ -45,7 +48,10 @@ __attribute__((noreturn)) void main(void)
   }
   */
   usbStart();
+  radioDumpFifo();
+  radioDumpData(1, 1);
 
   while (1)
     usbProcess(received_data);
+
 }
