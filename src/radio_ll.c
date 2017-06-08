@@ -16,18 +16,12 @@
 
 static void radio_reset(void)
 {
-  if (palawanModel() == palawan_tx)
-    GPIOB->PSOR = (1 << 11);
-  else if (palawanModel() == palawan_rx)
-    GPIOB->PSOR = (1 << 11);
+  GPIOB->PSOR = (1 << 11);
 }
 
 static void radio_enable(void)
 {
-  if (palawanModel() == palawan_tx)
-    GPIOB->PCOR = (1 << 11);
-  else if (palawanModel() == palawan_rx)
-    GPIOB->PCOR = (1 << 11);
+  GPIOB->PCOR = (1 << 11);
 }
 
 /**
@@ -104,16 +98,8 @@ static void early_msleep(int msec)
 int radioPowerCycle(void)
 {
   /* Mux the reset GPIO */
-  if (palawanModel() == palawan_tx)
-  {
-    GPIOB->PDDR |= ((uint32_t)1 << 11);
-    PORTB->PCR[11] = PORTx_PCRn_MUX(1);
-  }
-  else if (palawanModel() == palawan_rx)
-  {
-    GPIOB->PDDR |= ((uint32_t)1 << 11);
-    PORTB->PCR[11] = PORTx_PCRn_MUX(1);
-  }
+  GPIOB->PDDR |= ((uint32_t)1 << 11);
+  PORTB->PCR[11] = PORTx_PCRn_MUX(1);
 
   radio_reset();
 
@@ -128,6 +114,16 @@ int radioPowerCycle(void)
   return 1;
 }
 
+int b8_irqs = 0;
+void VectorB8(void)
+{
+  b8_irqs++;
+  asm("bkpt #41");
+  radioPoll(0);
+  /* Clear all pending interrupts on this port. */
+  PORTA->ISFR = 0xFFFFFFFF;
+}
+
 /**
  * @brief   Set up mux ports, enable SPI, and set up GPIO.
  * @details The MCU communicates to the radio via SPI and a few GPIO lines.
@@ -140,18 +136,24 @@ static void early_init_radio(void)
    * PORTC, PORTD, and PORTE.*/
   SIM->SCGC5 |= (SIM_SCGC5_PORTA | SIM_SCGC5_PORTB);
 
-  /* Map Reset to a GPIO, which is looped from PTE19 back into
-     the RESET_B_XCVR port.*/
-  if (palawanModel() == palawan_tx)
-  {
-    GPIOB->PDDR |= ((uint32_t)1 << 11);
-    PORTB->PCR[11] = PORTx_PCRn_MUX(1);
-  }
-  else if (palawanModel() == palawan_rx)
-  {
-    GPIOB->PDDR |= ((uint32_t)1 << 11);
-    PORTB->PCR[11] = PORTx_PCRn_MUX(1);
-  }
+  /* Map Reset to a GPIO, which is connected to PTB11. */
+  GPIOB->PDDR |= ((uint32_t)1 << 11);
+  GPIOB->PSOR = (1 << 11);
+  PORTB->PCR[11] = PORTx_PCRn_MUX(1);
+
+  /* Mux PTA8 as DIO0, to receive packets.
+   * Enable the interrupt, and mux it as a slow slew rate.
+   */
+  PORTA->PCR[8] = PORTx_PCRn_MUX(1) | (1 << 2) | (0xb << 16);
+  GPIOA->PDDR &= ~(1 << 8);
+
+  /* Mux PTB2 as DIO1, useful for knowing when the FIFO is empty.
+   */
+  PORTB->PCR[2] = PORTx_PCRn_MUX(1) | (1 << 2);
+  GPIOB->PDDR &= ~(1 << 2);
+
+  /* Unmask PORTA IRQs, so VectorB8() will get called. */
+  NVIC_EnableIRQ(PINA_IRQn);
 
   /* Keep the radio in reset.*/
   radio_reset();
@@ -209,5 +211,5 @@ void radioInit(void)
   radioPowerCycle();
 
   /* 32Mhz/4 = 8 MHz CLKOUT.*/
-  radio_configure_clko(RADIO_CLK_DIV1);
+  //radio_configure_clko(RADIO_CLK_DIV1);
 }
