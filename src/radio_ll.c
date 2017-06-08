@@ -114,6 +114,7 @@ int radioPowerCycle(void)
   return 1;
 }
 
+#if 0
 int b8_irqs = 0;
 void VectorB8(void)
 {
@@ -123,6 +124,7 @@ void VectorB8(void)
   /* Clear all pending interrupts on this port. */
   PORTA->ISFR = 0xFFFFFFFF;
 }
+#endif
 
 /**
  * @brief   Set up mux ports, enable SPI, and set up GPIO.
@@ -149,46 +151,18 @@ static void early_init_radio(void)
 
   /* Mux PTB2 as DIO1, useful for knowing when the FIFO is empty.
    */
-  PORTB->PCR[2] = PORTx_PCRn_MUX(1) | (1 << 2);
+  PORTB->PCR[2] = PORTx_PCRn_MUX(1) | (1 << 2) | (0xb << 16);
   GPIOB->PDDR &= ~(1 << 2);
 
   /* Unmask PORTA IRQs, so VectorB8() will get called. */
   NVIC_EnableIRQ(PINA_IRQn);
+  PORTA->ISFR = 0xFFFFFFFF;
 
   /* Keep the radio in reset.*/
   radio_reset();
 
   spiReadStatus();
   spiDeassertCs();
-}
-
-/**
- * @brief   Configure the radio to output a given clock frequency
- *
- * @param[in] osc_div   a factor of division, of the form 2^n
- *
- * @notapi
- */
-
-/* This optimization fix causes it to read DIOMAPPING2 three times, and
- * for reasons unknown, this actually causes it to stick.
- * Maybe it's a race condition, I'm not really sure.  But if you don't
- * do the readback afterwards, then the clock gets stuck at 1 MHz rather
- * than 8 MHz, and bad things happen.
- */
-#define DIOVAL2_OPTIMIZATION_FIX
-static void radio_configure_clko(uint8_t osc_div)
-{
-#ifdef DIOVAL2_OPTIMIZATION_FIX
-  uint8_t dioval2 = radioReadRegister(RADIO_REG_DIOMAPPING2);
-  radioWriteRegister(RADIO_REG_DIOMAPPING2, (dioval2 & ~7) | osc_div);
-  dioval2 = radioReadRegister(RADIO_REG_DIOMAPPING2);
-  radioWriteRegister(RADIO_REG_DIOMAPPING2, (dioval2 & ~7) | osc_div);
-  (void)radioReadRegister(RADIO_REG_DIOMAPPING2);
-#else
-  radioWriteRegister(RADIO_REG_DIOMAPPING2,
-                     (radioReadRegister(RADIO_REG_DIOMAPPING2) & ~7) | osc_div);
-#endif
 }
 
 void radioInit(void)
