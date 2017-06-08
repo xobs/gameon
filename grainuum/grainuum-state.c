@@ -267,8 +267,6 @@ static int grainuum_state_process_setup(struct GrainuumState *state, const uint8
   }
   else {
     response_len = cfg->getDescriptor(usb, setup, &response);
-//if ((packet[0] == 0x80) && (packet[1] == 0x06) && (packet[2] == 0x00) && (packet[3] == 0x02) && (packet[4] == 0x00) && (packet[5] == 0x00) && /*(packet[6] == 0x09) &&*/ (packet[7] == 0x00))
-//asm("bkpt #99");
   }
   grainuum_state_send_data(state, state->tok_epnum, response, response_len, setup->wLength);
 
