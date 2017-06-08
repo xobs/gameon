@@ -24,53 +24,6 @@ static void radio_enable(void)
   GPIOB->PCOR = (1 << 11);
 }
 
-/**
- * @brief   Read a value from a specified radio register
- *
- * @param[in] addr      radio register to read from
- * @return              value read from said register
- *
- * @notapi
- */
-uint8_t radioReadRegister(uint8_t addr)
-{
-  uint8_t val;
-
-  spiReadStatus();
-  spiAssertCs();
-
-  spiXmitByteSync(addr);
-  spiRecvByteSync();
-  val = spiRecvByteSync();
-
-  spiDeassertCs();
-
-  return val;
-}
-
-/**
- * @brief   Write a value to a specified radio register
- *
- * @param[in] addr      radio register to write to
- * @param[in] val       value to write to said register
- *
- * @notapi
- */
-void radioWriteRegister(uint8_t addr, uint8_t val)
-{
-
-  spiReadStatus();
-  spiAssertCs();
-  /* Send the address to write */
-  spiXmitByteSync(addr | 0x80);
-
-  /* Send the actual value */
-  spiXmitByteSync(val);
-
-  (void)spiRecvByteSync();
-  spiDeassertCs();
-}
-
 static void early_usleep(int usec)
 {
   int j, k;
@@ -114,18 +67,6 @@ int radioPowerCycle(void)
   return 1;
 }
 
-#if 0
-int b8_irqs = 0;
-void VectorB8(void)
-{
-  b8_irqs++;
-  asm("bkpt #41");
-  radioPoll(0);
-  /* Clear all pending interrupts on this port. */
-  PORTA->ISFR = 0xFFFFFFFF;
-}
-#endif
-
 /**
  * @brief   Set up mux ports, enable SPI, and set up GPIO.
  * @details The MCU communicates to the radio via SPI and a few GPIO lines.
@@ -144,14 +85,14 @@ static void early_init_radio(void)
   PORTB->PCR[11] = PORTx_PCRn_MUX(1);
 
   /* Mux PTA8 as DIO0, to receive packets.
-   * Enable the interrupt, and mux it as a slow slew rate.
+   * Enable the interrupt (rising edge), and mux it as a slow slew rate.
    */
-  PORTA->PCR[8] = PORTx_PCRn_MUX(1) | (1 << 2) | (0xb << 16);
+  PORTA->PCR[8] = PORTx_PCRn_MUX(1) | (1 << 2) | (9 << 16);
   GPIOA->PDDR &= ~(1 << 8);
 
   /* Mux PTB2 as DIO1, useful for knowing when the FIFO is empty.
    */
-  PORTB->PCR[2] = PORTx_PCRn_MUX(1) | (1 << 2) | (0xb << 16);
+  PORTB->PCR[2] = PORTx_PCRn_MUX(1) | (1 << 2) | (9 << 16);
   GPIOB->PDDR &= ~(1 << 2);
 
   /* Unmask PORTA IRQs, so VectorB8() will get called. */
@@ -167,23 +108,7 @@ static void early_init_radio(void)
 
 void radioInit(void)
 {
-  /*
-  switch (palawanModel())
-  {
-  case palawan_tx:
-    break;
 
-  case palawan_rx:
-    break;
-
-  default:
-    asm("bkpt #0");
-    break;
-  }
-*/
   early_init_radio();
   radioPowerCycle();
-
-  /* 32Mhz/4 = 8 MHz CLKOUT.*/
-  //radio_configure_clko(RADIO_CLK_DIV1);
 }

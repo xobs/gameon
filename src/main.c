@@ -7,11 +7,21 @@
 extern void usbStart(void);
 void usbProcess(void (*received_data)(void *data, uint32_t size));
 
-static void received_data(void *data, uint32_t bytes)
+static void usb_received_data(void *data, uint32_t bytes)
 {
   (void)data;
   (void)bytes;
   FGPIOB->PTOR = (1 << 1);
+}
+
+static void radio_process(void)
+{
+  extern uint8_t radioHasData;
+  if (!radioHasData)
+    return;
+
+  radioHasData = 0;
+  radioPollDefault();
 }
 
 static void configure_led(void)
@@ -31,27 +41,13 @@ __attribute__((noreturn)) void main(void)
   if (palawanModel() == palawan_rx) {
     radioSetAddress(radioDevice, 0);
   }
-  /*
-  while (1) {
-    FGPIOB->PTOR = (1 << 1);
 
-    int ms;
-    for (ms = 0; ms < 500; ms++) {
-      int i;
-      for (i = 0; i < 100; i++) {
-        int j;
-        for (j = 0; j < 77; j++) {
-          asm("");
-        }
-      }
-    }
-  }
-  */
   usbStart();
   radioDumpFifo();
   radioDumpData(1, 1);
 
-  while (1)
-    usbProcess(received_data);
-
+  while (1) {
+    usbProcess(usb_received_data);
+    radio_process();
+  }
 }

@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "radio-protocols.h"
 
 struct _KRadioDevice;
 typedef struct _KRadioDevice KRadioDevice;
@@ -21,13 +22,8 @@ typedef struct _RadioPacket {
   uint8_t payload[0];   /* Actual contents of packet */
 } RadioPacket;
 
-enum radio_protocols {
-  radio_prot_paging      = 1,
-  radio_prot_dut_to_peer = 6,
-  radio_prot_peer_to_dut = 7,
-};
-
 extern KRadioDevice KRADIO1;
+extern uint8_t radioHasData;
 
 void radioInit(void);
 void radioStart(KRadioDevice *radio);

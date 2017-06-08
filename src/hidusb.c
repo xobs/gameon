@@ -388,13 +388,13 @@ static struct GrainuumConfig hid_link = {
 };
 
 static GRAINUUM_BUFFER(phy_queue, 4);
-extern void radioPollDefault(void);
+uint8_t radioHasData = 0;
 void VectorBC(void)
 {
   if (PORTB->ISFR & (3 << 5))
     grainuumCaptureI(&defaultUsbPhy, GRAINUUM_BUFFER_ENTRY(phy_queue));
   if (PORTB->ISFR & (1 << 2))
-    radioPollDefault();
+    radioHasData = 1;
 
   /* Clear all pending interrupts on this port. */
   PORTB->ISFR = 0xFFFFFFFF;
