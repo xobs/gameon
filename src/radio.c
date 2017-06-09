@@ -155,7 +155,8 @@ static uint8_t const default_registers[] = {
   RADIO_Ocp, Ocp_Ocp_On | 0x0C,
 
   /* Radio LNA gain and input impedance initialization @0x18*/
-  RADIO_Lna, Lna_LnaZin_50 | Lna_LnaGain_Agc,// Lna_LnaZin_200 | 0x08,
+  //RADIO_Lna, Lna_LnaZin_50 | Lna_LnaGain_Agc,
+  RADIO_Lna, Lna_LnaZin_200 | 0x08,
 
   /* Radio channel filter bandwidth initialization @0x19*/
   RADIO_RxBw, DccFreq_2 | RxBwMant_0 | RxBwExp_2,
@@ -210,15 +211,7 @@ static void spiSend(void *ignored, int count, const void *data) {
   const uint8_t *bytes = data;
 
   for (i = 0; i < count; i++)
-    spiXmitByteSync(bytes[i]);
-
-  /* Sync byte */
-  //spiXmitByteSync(0xff);
-}
-
-static void spiSync(void *ignored) {
-  (void)ignored;
-  spiXmitByteSync(0xff);
+    spiTransceive(bytes[i]);
 }
 
 static void spiReceive(void *ignored, int count, void *data) {
@@ -228,7 +221,7 @@ static void spiReceive(void *ignored, int count, void *data) {
   uint8_t *bytes = data;
 
   for (i = 0; i < count; i++)
-    bytes[i] = spiRecvByteSync();
+    bytes[i] = spiTransceive(0xff);
 }
 
 static void radio_select(KRadioDevice *radio) {
@@ -256,7 +249,6 @@ static uint8_t radio_get(KRadioDevice *radio, uint8_t addr) {
 
   radio_select(radio);
   spiSend(NULL, 1, &addr);
-  spiSync(NULL);
   spiReceive(NULL, 1, &val);
   radio_unselect(radio);
   return val;
@@ -421,7 +413,6 @@ void radioUnloadPacket(KRadioDevice *radio) {
   radio_select(radio);
   reg = RADIO_Fifo;
   spiSend(NULL, 1, &reg);
-  spiSync(NULL);
   
   /* Read the "length" byte */
   spiReceive(NULL, sizeof(pkt), &pkt);
@@ -564,7 +555,6 @@ int radioDump(KRadioDevice *radio, uint8_t addr, void *bfr, int count) {
 
   radio_select(radio);
   spiSend(NULL, 1, &addr);
-  spiSync(NULL);
   spiReceive(NULL, count, bfr);
   radio_unselect(radio);
 
@@ -595,7 +585,6 @@ int radioTemperature(KRadioDevice *radio) {
 
     radio_select(radio);
     spiSend(NULL, 1, buf);
-    spiSync(NULL);
     spiReceive(NULL, 2, buf);
     radio_unselect(radio);
   }
