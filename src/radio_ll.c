@@ -68,11 +68,12 @@ int radioPowerCycle(void)
 }
 
 int b8_irqs = 0;
+uint8_t packetAvailable = 0;
 void VectorB8(void)
 {
   b8_irqs++;
   asm("bkpt #41");
-  radioPoll(0);
+  packetAvailable = 1;
   /* Clear all pending interrupts on this port. */
   PORTA->ISFR = 0xFFFFFFFF;
 }

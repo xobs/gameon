@@ -51,7 +51,13 @@ __attribute__((noreturn)) void main(void)
   radioDumpFifo();
   radioDumpData(1, 1);
 
-  while (1)
+  while (1) {
+    extern uint8_t packetAvailable;
     usbProcess(received_data);
+    if (packetAvailable) {
+      packetAvailable = 0;
+      radioPoll(radioDevice);
+    }
+  }
 
 }
