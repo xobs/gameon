@@ -1,5 +1,6 @@
 #include "palawan.h"
 #include "kl17.h"
+#include "memio.h"
 
 void spiAssertCs(void)
 {
@@ -17,49 +18,30 @@ void spiReadStatus(void)
 }
 
 /**
- * @brief   Send a byte and discard the response
- *
- * @notapi
- */
-void spiXmitByteSync(uint8_t byte)
-{
-  /* Send the byte */
-  SPI0->D = byte;
-
-  /* Wait for the byte to be transmitted */
-  while (!(SPI0->S & SPIx_S_SPTEF))
-    asm("");
-
-  /* Discard the response */
-  (void)SPI0->D;
-}
-
-/**
  * @brief   Send a dummy byte and return the response
  *
  * @return              value read from said register
  *
  * @notapi
  */
-uint8_t spiRecvByteSync(void)
+uint8_t spiTranscieve(uint8_t byte)
 {
   /* Wait for the Tx FIFO to clear up */
-  while (!(SPI0->S & SPIx_S_SPTEF))
-    asm("");
+  while (!(readb(SPI0_S) & SPIx_S_SPTEF))
+    ;
 
   /* Without this read first, the write is ignored */
-  (void)SPI0->S;
+  //(void)SPI0->S;
 
-  /* Send a dummy byte, to induce a transfer */
-  SPI0->D = 0xff;
+  /* Send the byte, to induce a transfer */
+  writeb(byte, SPI0_D);
 
-  /* Wait for the byte to be transmitted */
-  while (!(SPI0->S & SPIx_S_SPRF))
-    asm("");
+  /* Wait for the incoming byte to be available */
+  while (!(readb(SPI0_S) & SPIx_S_SPRF))
+    ;
 
   /* Return the response */
-   uint8_t val = SPI0->D;
-   return val;
+   return readb(SPI0_D);
 }
 
 void spiInit(void)
@@ -72,16 +54,16 @@ void spiInit(void)
 
   /* Mux PTA5 as a GPIO, since it's used for Chip Select.*/
   GPIOA->PDDR |= ((uint32_t)1 << 5);
-  PORTA->PCR[5] = PORTx_PCRn_MUX(1);
+  PORTA->PCR[5] = PORTx_PCRn_MUX(1) | (1 << 2);
 
   /* Mux PTB0 as SCK */
-  PORTB->PCR[0] = PORTx_PCRn_MUX(3);
+  PORTB->PCR[0] = PORTx_PCRn_MUX(3) | (1 << 2);
 
   /* Mux PTA6 as MISO */
-  PORTA->PCR[6] = PORTx_PCRn_MUX(3);
+  PORTA->PCR[6] = PORTx_PCRn_MUX(3) | (1 << 2);
 
   /* Mux PTA7 as MOSI */
-  PORTA->PCR[7] = PORTx_PCRn_MUX(3);
+  PORTA->PCR[7] = PORTx_PCRn_MUX(3) | (1 << 2);
 
   /* Initialize the SPI peripheral default values.*/
   SPI0->C1 = 0;

@@ -3,6 +3,7 @@
 #include "spi.h"
 #include "palawan.h"
 #include "radio.h"
+#include "dhcp-server.h"
 
 extern void usbStart(void);
 void usbProcess(void (*received_data)(void *data, uint32_t size));
@@ -40,6 +41,7 @@ __attribute__((noreturn)) void main(void)
   radioStart(radioDevice);
   if (palawanModel() == palawan_rx) {
     radioSetAddress(radioDevice, 0);
+    dhcpServerSetup(radioDevice);
   }
 
   usbStart();

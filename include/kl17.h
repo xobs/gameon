@@ -308,6 +308,15 @@ typedef struct
   __IO uint8_t  PMSTAT;
 } SMC_TypeDef;
 
+typedef struct
+{
+  __IO uint8_t  SRS0;
+  __IO uint8_t  SRS1;
+       uint8_t  RESERVED1[2];
+  __IO uint8_t  RFPC;
+  __IO uint8_t  RFPW;
+} RCM_TypeDef;
+
 /****************************************************************/
 /*                  Peripheral memory map                       */
 /****************************************************************/
@@ -331,6 +340,7 @@ typedef struct
 #define LLWU_BASE               ((uint32_t)0x4007C000)
 #define PMC_BASE                ((uint32_t)0x4007D000)
 #define SMC_BASE                ((uint32_t)0x4007E000)
+#define RCM_BASE                ((uint32_t)0x4007F000)
 #define GPIOA_BASE              ((uint32_t)0x400FF000)
 #define GPIOB_BASE              ((uint32_t)0x400FF040)
 #define FGPIOA_BASE             ((uint32_t)0xF8000000)
@@ -351,30 +361,19 @@ typedef struct
 #define LLWU                    ((LLWU_TypeDef  *)   LLWU_BASE)
 #define PMC                     ((PMC_TypeDef  *)    PMC_BASE)
 #define SMC                     ((SMC_TypeDef  *)    SMC_BASE)
+#define RCM                     ((RCM_TypeDef  *)    RCM_BASE)
 #define PORTA                   ((PORT_TypeDef  *)   PORTA_BASE)
 #define PORTB                   ((PORT_TypeDef  *)   PORTB_BASE)
-#define PORTC                   ((PORT_TypeDef  *)   PORTC_BASE)
-#define PORTD                   ((PORT_TypeDef  *)   PORTD_BASE)
-#define PORTE                   ((PORT_TypeDef  *)   PORTE_BASE)
 #define MCG                     ((MCG_TypeDef  *)    MCG_BASE)
 #define OSC0                    ((OSC_TypeDef  *)    OSC0_BASE)
 #define SPI0                    ((SPI_TypeDef *)     SPI0_BASE)
-#define SPI1                    ((SPI_TypeDef *)     SPI1_BASE)
 #define I2C0                    ((I2C_TypeDef *)     I2C0_BASE)
 #define I2C1                    ((I2C_TypeDef *)     I2C1_BASE)
 #define UART0                   ((UARTLP_TypeDef *)  UART0_BASE)
-#define UART1                   ((UART_TypeDef *)    UART1_BASE)
-#define UART2                   ((UART_TypeDef *)    UART2_BASE)
 #define GPIOA                   ((GPIO_TypeDef  *)   GPIOA_BASE)
 #define GPIOB                   ((GPIO_TypeDef  *)   GPIOB_BASE)
-#define GPIOC                   ((GPIO_TypeDef  *)   GPIOC_BASE)
-#define GPIOD                   ((GPIO_TypeDef  *)   GPIOD_BASE)
-#define GPIOE                   ((GPIO_TypeDef  *)   GPIOE_BASE)
 #define FGPIOA                  ((GPIO_TypeDef  *)   FGPIOA_BASE)
 #define FGPIOB                  ((GPIO_TypeDef  *)   FGPIOB_BASE)
-#define FGPIOC                  ((GPIO_TypeDef  *)   FGPIOC_BASE)
-#define FGPIOD                  ((GPIO_TypeDef  *)   FGPIOD_BASE)
-#define FGPIOE                  ((GPIO_TypeDef  *)   FGPIOE_BASE)
 
 /****************************************************************/
 /*           Peripheral Registers Bits Definition               */
@@ -1191,6 +1190,19 @@ typedef struct
 #define PMC_REGSC_ACKISO              ((uint8_t)0x8)    /*!< Acknowledge Isolation */
 #define PMC_REGSC_REGONS              ((uint8_t)0x4)    /*!< Regulator In Run Regulation Status */
 #define PMC_REGSC_BGBE                ((uint8_t)0x1)    /*!< Bandgap Buffer Enable */
+/*********  Bits definition for RCM_REGSC register  *************/
+#define RCM_SRS0_POR                  ((uint8_t)1 << 7) /*!< Power-On Reset */
+#define RCM_SRS0_PIN                  ((uint8_t)1 << 6) /*!< External reset pin */
+#define RCM_SRS0_WDOG                 ((uint8_t)1 << 5) /*!< COP-timer watchdog hit */
+#define RCM_SRS0_LOC                  ((uint8_t)1 << 2) /*!< Loss-of-clock reset */
+#define RCM_SRS0_LVD                  ((uint8_t)1 << 1) /*!< Low-voltage detect */
+#define RCM_SRS0_WAKEUP               ((uint8_t)1 << 0) /*!< Low-leakage wakeup event */
+
+#define RCM_SRS1_SACKERR              ((uint8_t)1 << 5) /*!< Stop-acknowledge error */
+#define RCM_SRS1_MDM_AP               ((uint8_t)1 << 3) /*!< Debugger reset */
+#define RCM_SRS1_SW                   ((uint8_t)1 << 2) /*!< Software set SYSRESETREQ bit */
+#define RCM_SRS1_LOCKUP               ((uint8_t)1 << 1) /*!< Core detected a lockup */
+
 /****************************************************************/
 /*                                                              */
 /*             System Management Controller (SMC)               */

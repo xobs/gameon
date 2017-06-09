@@ -14,6 +14,10 @@ extern KRadioDevice KRADIO1;
 #define RADIO_NETWORK_MAX_LENGTH 8
 #define RADIO_BROADCAST_ADDRESS 255
 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(x) ((sizeof(x)) / sizeof(*x))
+#endif
+
 typedef struct _RadioPacket {
   uint8_t length;       /* Total length of packet, including length field */
   uint8_t dst;          /* Address of intended recipient */
