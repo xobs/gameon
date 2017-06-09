@@ -89,12 +89,12 @@ static uint8_t const default_registers[] = {
   RADIO_DataModul, DataModul_DataMode_Packet | DataModul_Modulation_Fsk | DataModul_ModulationShaping_BT_05,
 
   /* Radio bit rate initialization @0x03-0x04*/
-  //RADIO_BitrateMsb, BitrateMsb_55555,
-  //RADIO_BitrateLsb, BitrateMsb_55555,
+  RADIO_BitrateMsb, BitrateMsb_55555,
+  RADIO_BitrateLsb, BitrateMsb_55555,
 
   /* Radio frequency deviation initialization @0x05-0x06*/
-  //RADIO_FdevMsb, FdevMsb_50000,
-  //RADIO_FdevLsb, FdevLsb_50000,
+  RADIO_FdevMsb, FdevMsb_50000,
+  RADIO_FdevLsb, FdevLsb_50000,
 
   /* Radio RF frequency initialization @0x07-0x09*/
   /*Default Frequencies*/
@@ -149,7 +149,7 @@ static uint8_t const default_registers[] = {
   RADIO_PaLevel, PaLevel_Pa0_On | PaLevel_Pa1_Off | PaLevel_Pa2_Off | 0x1F,
 
   /* Radio Rise/Fall time of ramp up/down in FSK initialization @0x12*/
-  RADIO_PaRamp, PaRamp_40,
+  //RADIO_PaRamp, PaRamp_40,
 
   /* Radio overload current protection for PA initialization 0x13*/
   RADIO_Ocp, Ocp_Ocp_On | 0x0C,
@@ -160,6 +160,8 @@ static uint8_t const default_registers[] = {
 
   /* Radio channel filter bandwidth initialization @0x19*/
   //RADIO_RxBw, DccFreq_2 | RxBwMant_0 | RxBwExp_2,
+  RADIO_RxBw, 0x55,
+  RADIO_AfcBw, 0x8b,
 
   /* Radio channel filter bandwidth for AFC operation initialization @0x1A*/
   //RADIO_AfcBw, DccFreq_7 | RxBw_10400,
@@ -272,6 +274,7 @@ static uint8_t radio_get(KRadioDevice *radio, uint8_t addr) {
   radioDump(radio, addr, &val, 1);
   return val;
 }
+#if 0
 
 void radioPhySetBitRate(KRadioDevice *radio, uint32_t rate) {
 
@@ -367,7 +370,6 @@ static void radio_set_output_power_dbm(KRadioDevice *radio, int power) {
                                 | ((power + 18) & 0x1f));
 }
 
-#if 0
 static void radio_phy_force_idle(KRadioDevice *radio) {
   //Put transceiver in Stand-By mode
   radio_set(radio, RADIO_OpMode, OpMode_Sequencer_On
@@ -378,7 +380,6 @@ static void radio_phy_force_idle(KRadioDevice *radio) {
   while(radio_get(radio, RADIO_IrqFlags2) & 0x40)
     (void)radio_get(radio, RADIO_Fifo);
 }
-#endif
 
 static void radio_set_packet_mode(KRadioDevice *radio) {
   uint8_t reg;
@@ -411,6 +412,7 @@ void radio_set_encoding(KRadioDevice *radio, enum encoding_type encoding) {
   reg |= (encoding << PacketConfig1_DcFree_Shift);
   radio_set(radio, RADIO_PacketConfig1, reg);
 }
+#endif
 
 static void radio_set_node_address(KRadioDevice *radio, uint8_t address) {
 
@@ -432,7 +434,7 @@ void radioUnloadPacket(KRadioDevice *radio) {
   radio_select(radio);
   reg = RADIO_Fifo;
   spiSend(NULL, 1, &reg);
-  
+
   /* Read the "length" byte */
   spiReceive(NULL, sizeof(pkt), &pkt);
 
@@ -517,7 +519,7 @@ void radioStart(KRadioDevice *radio) {
     (void)radio_get(radio, RADIO_Fifo);
 
   radio_set(radio, RADIO_TestLna, 0x2D); // put LNA into high sensitivity mode
- 
+
   /* Move into "Rx" mode */
   radio->mode = mode_receiving;
   radio_set(radio, RADIO_OpMode, OpMode_Sequencer_On
