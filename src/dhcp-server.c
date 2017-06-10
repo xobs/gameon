@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include "radio.h"
+#include "kl17.h"
 
 struct dhcp_request {
   uint64_t uid;
@@ -76,6 +77,7 @@ static void echo_request(uint8_t port,
   (void)length;
   (void)src;
   (void)data;
+  FGPIOB->PTOR = (1 << 1);
 }
 
 void dhcpServerSetup(KRadioDevice *radio) {
