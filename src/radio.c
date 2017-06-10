@@ -833,17 +833,9 @@ void radioSend(KRadioDevice *radio,
   radio_set(radio, RADIO_FifoThresh, 0x80 | (pkt.length - 1));
 
   radio_select(radio);
-
-  /* Select the FIFO */
-  reg = RADIO_Fifo | 0x80;
-  spiSend(NULL, 1, &reg);
-
-  /* Load the header into the Fifo */
-  spiSend(NULL, sizeof(pkt), &pkt);
-
-  /* Load the payload into the Fifo */
-  spiSend(NULL, bytes, payload);
-
+  reg = RADIO_Fifo | 0x80;  spiSend(NULL, 1, &reg);  /* Select the FIFO */
+  spiSend(NULL, sizeof(pkt), &pkt);  /* Load the header into the Fifo */
+  spiSend(NULL, bytes, payload);  /* Load the payload into the Fifo */
   radio_unselect(radio);
 
 #if 0
