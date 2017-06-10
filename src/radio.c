@@ -808,7 +808,8 @@ void radioSend(KRadioDevice *radio,
   RadioPacket pkt;
   uint8_t reg;
 
-  pkt.length = bytes + sizeof(pkt);
+  /* The length byte is not included in the length calculation. */
+  pkt.length = bytes + sizeof(pkt) - 1;
   pkt.src = radio->address;
   pkt.dst = addr;
   pkt.prot = prot;
@@ -827,7 +828,7 @@ void radioSend(KRadioDevice *radio,
                                | OpMode_StandBy);
 
   /* Transmit the packet as soon as the first byte enters the FIFO */
-  radio_set(radio, RADIO_FifoThresh, 0x80 | (pkt.length - 1));
+  radio_set(radio, RADIO_FifoThresh, 0x80 | pkt.length);
 
   radio_select(radio);
   reg = RADIO_Fifo | 0x80;  spiSend(NULL, 1, &reg);  /* Select the FIFO */
