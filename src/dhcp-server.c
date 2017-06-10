@@ -80,5 +80,5 @@ static void echo_request(uint8_t port,
 
 void dhcpServerSetup(KRadioDevice *radio) {
 	radioSetHandler(radio, radio_prot_dhcp_request, dhcp_request);
-  radioSetHandler(radio, radio_prot_echo_test, echo_request);
+  radioSetHandler(radio, radio_prot_echo, echo_request);
 }
