@@ -852,9 +852,8 @@ void radioSend(KRadioDevice *radio,
                                | OpMode_Listen_Off
                                | OpMode_Transmitter);
 
-  /* Wait for DIO1 to go low, indicating the transmission has finished */
-  radio_set(radio, RADIO_DioMapping1, DIO0_RxCrkOk | DIO1_TxFifoNotEmpty);
-  while ((FGPIOB->PDIR & (1 << 2)))
+  /* Wait for the radio to indicate the packet has been sent */
+  while(!(radio_get(radio, RADIO_IrqFlags2) & IrqFlags2_PacketSent))
     ;
 
 #if 0
