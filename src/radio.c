@@ -639,9 +639,6 @@ void radioUnloadPacket(KRadioDevice *radio) {
 
 void radioPoll(KRadioDevice *radio) {
 
-  if (!(GPIOA->PDIR & (1 << 8)))
-    return;
-
   radioUnloadPacket(radio);
 }
 
