@@ -211,7 +211,7 @@ static uint8_t const default_registers[] = {
   RADIO_PacketConfig2, PacketConfig2_AutoRxRestart_On | PacketConfig2_Aes_Off | 0x10,
 
   /* Radio payload length initialization */
-  RADIO_PayloadLength, 255,  //max length in rx
+  RADIO_PayloadLength, RADIO_FIFO_DEPTH,  //max length in rx
 
   RADIO_DioMapping1, DIO0_RxCrkOk | DIO1_TxFifoNotEmpty,
   RADIO_DioMapping2, 0x07, // turn off clock output
