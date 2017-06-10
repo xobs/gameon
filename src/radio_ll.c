@@ -72,7 +72,6 @@ uint8_t packetAvailable = 0;
 void VectorB8(void)
 {
   b8_irqs++;
-  asm("bkpt #41");
   packetAvailable = 1;
   /* Clear all pending interrupts on this port. */
   PORTA->ISFR = 0xFFFFFFFF;
