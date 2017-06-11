@@ -157,14 +157,14 @@ static uint8_t const default_registers[] = {
 #endif
 
   /* Radio RegAfcCtrl initialization @0x0B*/
-  RADIO_AfcCtrl, AfcCtrl_AfcLowBeta_Off,
+  //RADIO_AfcCtrl, AfcCtrl_AfcLowBeta_Off,
 
   /* Radio output power initialization @0x11*/
   RADIO_PaLevel, PaLevel_Pa0_On | PaLevel_Pa1_Off | PaLevel_Pa2_Off | 0x1F,
   //RADIO_PaLevel, 0x7F,
 
   /* Radio Rise/Fall time of ramp up/down in FSK initialization @0x12*/
-  RADIO_PaRamp, PaRamp_40,
+  RADIO_PaRamp, PaRamp_500,
 
   /* Radio overload current protection for PA initialization 0x13*/
   //RADIO_Ocp, Ocp_Ocp_On | 0x0C,
@@ -182,15 +182,15 @@ static uint8_t const default_registers[] = {
   RADIO_AfcBw, DccFreq_2 | RxBw_250000,
 
   /* Radio automatic frequency control initialization @0x1E*/
-  RADIO_AfcFei, AfcFei_AfcAuto_Off | AfcFei_AfcAutoClear_On,
+  //RADIO_AfcFei, AfcFei_AfcAuto_Off | AfcFei_AfcAutoClear_On,
 
   /* Radio Rssi threshold initialization @0x29*/
   // RSSIthres = [-174 + NF +10*log(2*RxBw) + DemodSNR] dBm
   // NF = 7dB
   // DemodSnr = 8dB
   // RxBw depends on frequency bands and profiles
-  RADIO_RssiThresh, 0xe4, // -101 dBm for 333.3 Khz singleside channel filter bandwith
-  //RADIO_RssiThresh, 0xdc, // -101 dBm for 333.3 Khz singleside channel filter bandwith
+  //RADIO_RssiThresh, 0xe4, // -101 dBm for 333.3 Khz singleside channel filter bandwith
+  RADIO_RssiThresh, 0xdc, // -101 dBm for 333.3 Khz singleside channel filter bandwith
 
   /* Radio RegTimeoutRxStart initialization @0x2A*/
   /* Radio RegTimeoutRssiThresh initialization @0x2B*/
@@ -673,7 +673,7 @@ void radioStart(KRadioDevice *radio) {
     radio_set(radio, cmd, dat);
   }
 
-  radio_set_config(radio, OOK_Rb1Bw1);
+  radio_set_config(radio, FSK_Rb2Fd5);
 
   //radio_phy_update_modulation_parameters(radio);
   //radioPhySetBitRate(radio, 50000);
