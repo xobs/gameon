@@ -67,20 +67,6 @@ static void dhcp_request(uint8_t port,
   radioSend(radioDevice, RADIO_BROADCAST_ADDRESS, radio_prot_dhcp_response, sizeof(response), &response);
 }
 
-static void echo_request(uint8_t port,
-                         uint8_t src,
-                         uint8_t dst,
-                         uint8_t length,
-                         const void *data) {
-  (void)port;
-  (void)dst;
-  (void)length;
-  (void)src;
-  (void)data;
-  FGPIOB->PTOR = (1 << 1);
-}
-
 void dhcpServerSetup(KRadioDevice *radio) {
 	radioSetHandler(radio, radio_prot_dhcp_request, dhcp_request);
-  radioSetHandler(radio, radio_prot_echo, echo_request);
 }
