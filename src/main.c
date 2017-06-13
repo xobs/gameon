@@ -7,6 +7,8 @@
 
 extern void usbStart(void);
 void usbProcess(void (*received_data)(void *data, uint32_t size));
+void echoServerSetup(KRadioDevice *radio);
+void firmwareServerSetup(KRadioDevice *radio);
 
 static void received_data(void *data, uint32_t bytes)
 {
@@ -32,6 +34,8 @@ __attribute__((noreturn)) void main(void)
   if (palawanModel() == palawan_rx) {
     radioSetAddress(radioDevice, 0);
     dhcpServerSetup(radioDevice);
+    echoServerSetup(radioDevice);
+    firmwareServerSetup(radioDevice);
   }
 
   usbStart();
