@@ -23,28 +23,12 @@
 /* This number was guessed based on observations (133 at 30 degrees) */
 static int temperature_offset = 133 + 30;
 
-enum modulation_type {
-  modulation_fsk_no_shaping = 0,
-  modulation_fsk_gaussian_bt_1p0 = 1,
-  modulation_fsk_gaussian_bt_0p5 = 2,
-  modulation_fsk_gaussian_bt_0p3 = 3,
-  modulation_ook_no_filter = 8,
-  modulation_ook_filter_br = 9,
-  modulation_ook_filter_2xbr = 10,
-};
-
 enum radio_mode {
   mode_sleep,
   mode_standby,
   mode_fs,
   mode_receiving,
   mode_transmitting,
-};
-
-enum encoding_type {
-  encoding_none = 0,
-  encoding_manchester = 1,
-  encoding_whitening = 2,
 };
 
 typedef struct _PacketHandler {
@@ -55,8 +39,6 @@ typedef struct _PacketHandler {
 
 /* Kinetis Radio definition */
 typedef struct _KRadioDevice {
-  uint16_t                bit_rate;
-  uint32_t                channel;
   uint8_t                 rx_buf[RADIO_BUFFER_SIZE];
   uint32_t                rx_buf_end;
   uint32_t                rx_buf_pos;
@@ -69,9 +51,7 @@ typedef struct _KRadioDevice {
                                              uint8_t dst,
                                              uint8_t length,
                                              const void *data);
-  enum modulation_type    modulation;
   enum radio_mode         mode;
-  enum encoding_type      encoding;
 } KRadioDevice;
 
 KRadioDevice KRADIO1;
@@ -83,14 +63,6 @@ static uint8_t const default_registers[] = {
 
   /* Radio Data mode and modulation initialization @0x02*/
   RADIO_DataModul, DataModul_DataMode_Packet | DataModul_Modulation_Fsk | DataModul_ModulationShaping_NoShaping,
-
-  /* Radio bit rate initialization @0x03-0x04*/
-  RADIO_BitrateMsb, BitrateMsb_55555,
-  RADIO_BitrateLsb, BitrateLsb_55555,
-
-  /* Radio frequency deviation initialization @0x05-0x06*/
-  RADIO_FdevMsb, FdevMsb_50000,
-  RADIO_FdevLsb, FdevLsb_50000,
 
   /* Disable AES encryption -- the key keeps its values across resets */
   RADIO_AesKey1, 0,
@@ -173,12 +145,6 @@ static uint8_t const default_registers[] = {
   RADIO_Lna, Lna_LnaZin_50 | Lna_LnaGain_Agc,
   //RADIO_Lna, Lna_LnaZin_50 | 0x08,
   //RADIO_Lna, Lna_LnaZin_200 | 0x08,
-
-  /* Radio channel filter bandwidth initialization @0x19*/
-  RADIO_RxBw, DccFreq_2 | RxBw_250000,
-
-  /* Radio channel filter bandwidth for AFC operation initialization @0x1A*/
-  RADIO_AfcBw, DccFreq_2 | RxBw_250000,
 
   /* Radio automatic frequency control initialization @0x1E*/
   //RADIO_AfcFei, AfcFei_AfcAuto_Off | AfcFei_AfcAutoClear_On,
@@ -339,37 +305,36 @@ static const struct modem_config MODEM_CONFIG_TABLE[] =
 
 };
 
-    typedef enum
-    {
-	FSK_Rb2Fd5 = 0,	    ///< FSK, Whitening, Rb = 2kbs,    Fd = 5kHz
-	FSK_Rb2_4Fd4_8,     ///< FSK, Whitening, Rb = 2.4kbs,  Fd = 4.8kHz
-	FSK_Rb4_8Fd9_6,     ///< FSK, Whitening, Rb = 4.8kbs,  Fd = 9.6kHz
-	FSK_Rb9_6Fd19_2,    ///< FSK, Whitening, Rb = 9.6kbs,  Fd = 19.2kHz
-	FSK_Rb19_2Fd38_4,   ///< FSK, Whitening, Rb = 19.2kbs, Fd = 38.4kHz
-	FSK_Rb38_4Fd76_8,   ///< FSK, Whitening, Rb = 38.4kbs, Fd = 76.8kHz
-	FSK_Rb57_6Fd120,    ///< FSK, Whitening, Rb = 57.6kbs, Fd = 120kHz
-	FSK_Rb125Fd125,     ///< FSK, Whitening, Rb = 125kbs,  Fd = 125kHz
-	FSK_Rb250Fd250,     ///< FSK, Whitening, Rb = 250kbs,  Fd = 250kHz
-	FSK_Rb55555Fd50,    ///< FSK, Whitening, Rb = 55555kbs,Fd = 50kHz for RFM69 lib compatibility
+typedef enum {
+  FSK_Rb2Fd5 = 0,	    ///< FSK, Whitening, Rb = 2kbs,    Fd = 5kHz
+  FSK_Rb2_4Fd4_8,     ///< FSK, Whitening, Rb = 2.4kbs,  Fd = 4.8kHz
+  FSK_Rb4_8Fd9_6,     ///< FSK, Whitening, Rb = 4.8kbs,  Fd = 9.6kHz
+  FSK_Rb9_6Fd19_2,    ///< FSK, Whitening, Rb = 9.6kbs,  Fd = 19.2kHz
+  FSK_Rb19_2Fd38_4,   ///< FSK, Whitening, Rb = 19.2kbs, Fd = 38.4kHz
+  FSK_Rb38_4Fd76_8,   ///< FSK, Whitening, Rb = 38.4kbs, Fd = 76.8kHz
+  FSK_Rb57_6Fd120,    ///< FSK, Whitening, Rb = 57.6kbs, Fd = 120kHz
+  FSK_Rb125Fd125,     ///< FSK, Whitening, Rb = 125kbs,  Fd = 125kHz
+  FSK_Rb250Fd250,     ///< FSK, Whitening, Rb = 250kbs,  Fd = 250kHz
+  FSK_Rb55555Fd50,    ///< FSK, Whitening, Rb = 55555kbs,Fd = 50kHz for RFM69 lib compatibility
 
-	GFSK_Rb2Fd5,	      ///< GFSK, Whitening, Rb = 2kbs,    Fd = 5kHz
-	GFSK_Rb2_4Fd4_8,    ///< GFSK, Whitening, Rb = 2.4kbs,  Fd = 4.8kHz
-	GFSK_Rb4_8Fd9_6,    ///< GFSK, Whitening, Rb = 4.8kbs,  Fd = 9.6kHz
-	GFSK_Rb9_6Fd19_2,   ///< GFSK, Whitening, Rb = 9.6kbs,  Fd = 19.2kHz
-	GFSK_Rb19_2Fd38_4,  ///< GFSK, Whitening, Rb = 19.2kbs, Fd = 38.4kHz
-	GFSK_Rb38_4Fd76_8,  ///< GFSK, Whitening, Rb = 38.4kbs, Fd = 76.8kHz
-	GFSK_Rb57_6Fd120,   ///< GFSK, Whitening, Rb = 57.6kbs, Fd = 120kHz
-	GFSK_Rb125Fd125,    ///< GFSK, Whitening, Rb = 125kbs,  Fd = 125kHz
-	GFSK_Rb250Fd250,    ///< GFSK, Whitening, Rb = 250kbs,  Fd = 250kHz
-	GFSK_Rb55555Fd50,   ///< GFSK, Whitening, Rb = 55555kbs,Fd = 50kHz
+  GFSK_Rb2Fd5,	      ///< GFSK, Whitening, Rb = 2kbs,    Fd = 5kHz
+  GFSK_Rb2_4Fd4_8,    ///< GFSK, Whitening, Rb = 2.4kbs,  Fd = 4.8kHz
+  GFSK_Rb4_8Fd9_6,    ///< GFSK, Whitening, Rb = 4.8kbs,  Fd = 9.6kHz
+  GFSK_Rb9_6Fd19_2,   ///< GFSK, Whitening, Rb = 9.6kbs,  Fd = 19.2kHz
+  GFSK_Rb19_2Fd38_4,  ///< GFSK, Whitening, Rb = 19.2kbs, Fd = 38.4kHz
+  GFSK_Rb38_4Fd76_8,  ///< GFSK, Whitening, Rb = 38.4kbs, Fd = 76.8kHz
+  GFSK_Rb57_6Fd120,   ///< GFSK, Whitening, Rb = 57.6kbs, Fd = 120kHz
+  GFSK_Rb125Fd125,    ///< GFSK, Whitening, Rb = 125kbs,  Fd = 125kHz
+  GFSK_Rb250Fd250,    ///< GFSK, Whitening, Rb = 250kbs,  Fd = 250kHz
+  GFSK_Rb55555Fd50,   ///< GFSK, Whitening, Rb = 55555kbs,Fd = 50kHz
 
-	OOK_Rb1Bw1,         ///< OOK, Whitening, Rb = 1kbs,    Rx Bandwidth = 1kHz.
-	OOK_Rb1_2Bw75,      ///< OOK, Whitening, Rb = 1.2kbs,  Rx Bandwidth = 75kHz.
-	OOK_Rb2_4Bw4_8,     ///< OOK, Whitening, Rb = 2.4kbs,  Rx Bandwidth = 4.8kHz.
-	OOK_Rb4_8Bw9_6,     ///< OOK, Whitening, Rb = 4.8kbs,  Rx Bandwidth = 9.6kHz.
-	OOK_Rb9_6Bw19_2,    ///< OOK, Whitening, Rb = 9.6kbs,  Rx Bandwidth = 19.2kHz.
-	OOK_Rb19_2Bw38_4,   ///< OOK, Whitening, Rb = 19.2kbs, Rx Bandwidth = 38.4kHz.
-	OOK_Rb32Bw64,       ///< OOK, Whitening, Rb = 32kbs,   Rx Bandwidth = 64kHz.
+  OOK_Rb1Bw1,         ///< OOK, Whitening, Rb = 1kbs,    Rx Bandwidth = 1kHz.
+  OOK_Rb1_2Bw75,      ///< OOK, Whitening, Rb = 1.2kbs,  Rx Bandwidth = 75kHz.
+  OOK_Rb2_4Bw4_8,     ///< OOK, Whitening, Rb = 2.4kbs,  Rx Bandwidth = 4.8kHz.
+  OOK_Rb4_8Bw9_6,     ///< OOK, Whitening, Rb = 4.8kbs,  Rx Bandwidth = 9.6kHz.
+  OOK_Rb9_6Bw19_2,    ///< OOK, Whitening, Rb = 9.6kbs,  Rx Bandwidth = 19.2kHz.
+  OOK_Rb19_2Bw38_4,   ///< OOK, Whitening, Rb = 19.2kbs, Rx Bandwidth = 38.4kHz.
+  OOK_Rb32Bw64,       ///< OOK, Whitening, Rb = 32kbs,   Rx Bandwidth = 64kHz.
 
 //	Test,
 } ModemConfigChoice;
@@ -426,7 +391,7 @@ uint8_t *radioDumpData(uint8_t start, uint8_t len) {
   return data_backing;
 }
 
-static void radio_set(KRadioDevice *radio, uint8_t addr, uint8_t val) {
+void radio_set(KRadioDevice *radio, uint8_t addr, uint8_t val) {
 
   uint8_t buf[2] = {addr | 0x80, val};
 
@@ -435,151 +400,15 @@ static void radio_set(KRadioDevice *radio, uint8_t addr, uint8_t val) {
   radio_unselect(radio);
 }
 
-static uint8_t radio_get(KRadioDevice *radio, uint8_t addr) {
+uint8_t radio_get(KRadioDevice *radio, uint8_t addr) {
 
   uint8_t val;
-  radioDump(radio, addr, &val, 1);
+  radio_select(radio);
+  spiSend(NULL, 1, &addr);
+  spiReceive(NULL, 1, &val);
+  radio_unselect(radio);
   return val;
 }
-#if 0
-
-void radioPhySetBitRate(KRadioDevice *radio, uint32_t rate) {
-
-  rate = RADIO_XTAL_FREQUENCY / rate;
-  radio_set(radio, RADIO_BitrateMsb, rate >> 8);
-  radio_set(radio, RADIO_BitrateLsb, rate);
-}
-
-static void radio_phy_update_modulation_parameters(KRadioDevice *radio) {
-
-  /* Radio frequency deviation initialization @0x05-0x06*/
-  radio_set(radio, RADIO_FdevMsb, Fdev_170000 >> 8);
-  radio_set(radio, RADIO_FdevLsb, Fdev_170000 & 0xff);
-
- /* Radio channel filter bandwidth initialization @0x19*/
-  radio_set(radio, RADIO_RxBw, DccFreq_2 | RxBw_250000);
-
-  /* Radio channel filter bandwidth for AFC operation initialization @0x1A*/
-  radio_set(radio, RADIO_AfcBw, DccFreq_2 | RxBw_250000);
-}
-
-void radioPhySetRfDeviation(KRadioDevice *radio, uint32_t fdev)
-{
-  /* Calculation->  Frf = Foperate/Fstep
-   *                Fstep = (Fxosc / 2**19)
-   *                (Fstep = 61.03515625; for a 32Mhz FXOSC)
-   *                Fstep * 256 = 15625.0
-   */
-  const uint32_t Fstep_32 = 15625; /* Fstep at 32 MHz times 256 */
-
-  fdev *= 256;
-  fdev /= Fstep_32;
-
-  radio_set(radio, RADIO_FdevMsb, fdev >> 8);
-  radio_set(radio, RADIO_FdevLsb, fdev);
-}
-
-uint32_t radioPhyRfDeviation(KRadioDevice *radio)
-{
-  const uint32_t Fstep_32 = 15625; /* Fstep at 32 MHz times 256 */
-  uint32_t fdev;
-
-  fdev  = (radio_get(radio, RADIO_FdevMsb) << 8) & 0x3f00;
-  fdev |= (radio_get(radio, RADIO_FdevLsb)) & 0xff;;
-  fdev *= Fstep_32;
-  fdev /= 256;
-
-  return fdev;
-}
-
-void radioPhyUpdateRfFrequency(KRadioDevice *radio, uint32_t freq) {
-
- uint32_t channel_frequency;
-
-  /* Calculation->  Frf = Foperate/Fstep
-   *                Fstep = (Fxosc / 2**19)
-   *                (Fstep = 61.03515625; for a 32Mhz FXOSC)
-   *                Fstep * 256 = 15625.0
-   */
-  const uint32_t Fstep_32 = 15625; /* Fstep at 32 MHz times 256 */
-  uint32_t Frf = freq;
-
-#warning "Verify this works"
-  Frf /= Fstep_32;
-  Frf *= 256;
-
-  /* This value corresponds to a channel spacing of 1 MHz.*/
-  channel_frequency = radio->channel * 0x4000;
-
-  /* This value corresponds to a Operating Frequency of 902,500,000
-   * Value for Channel0 (902.500 MHz)
-   */
-  channel_frequency += Frf;
-
-  radio_set(radio, RADIO_FrfMsb, channel_frequency >> 16);
-  radio_set(radio, RADIO_FrfMid, channel_frequency >> 8);
-  radio_set(radio, RADIO_FrfLsb, channel_frequency);
-}
-
-static void radio_set_preamble_length(KRadioDevice *radio, uint32_t length) {
-
-  /* Radio preamble size initialization @0x2C-0x2D*/
-  radio_set(radio, RADIO_PreambleMsb, length >> 8);
-  radio_set(radio, RADIO_PreambleLsb, length);
-}
-
-/* Valid range: -18 to 13 dBm */
-static void radio_set_output_power_dbm(KRadioDevice *radio, int power) {
-
-  radio_set(radio, RADIO_PaLevel, PaLevel_Pa0_On
-                                | PaLevel_Pa1_Off
-                                | PaLevel_Pa2_Off
-                                | ((power + 18) & 0x1f));
-}
-
-static void radio_phy_force_idle(KRadioDevice *radio) {
-  //Put transceiver in Stand-By mode
-  radio_set(radio, RADIO_OpMode, OpMode_Sequencer_On
-                            | OpMode_Listen_Off
-                            | OpMode_StandBy);
-
-  //clear the transceiver FIFO
-  while(radio_get(radio, RADIO_IrqFlags2) & 0x40)
-    (void)radio_get(radio, RADIO_Fifo);
-}
-
-static void radio_set_packet_mode(KRadioDevice *radio) {
-  uint8_t reg;
-
-  reg = radio_get(radio, RADIO_DataModul);
-  reg &= ~DataModul_DataMode_Mask;
-  reg |= DataModul_DataMode_Packet;
-  radio_set(radio, RADIO_DataModul, reg);
-}
-
-static void radio_set_modulation(KRadioDevice *radio,
-                                 enum modulation_type modulation) {
-
-  uint8_t reg;
-
-  reg = radio_get(radio, RADIO_DataModul);
-  reg &= ~DataModul_ModulationShaping_Mask;
-  reg &= ~DataModul_Modulation_Mask;
-  reg |= modulation;
-  radio_set(radio, RADIO_DataModul, reg);
-}
-
-void radio_set_encoding(KRadioDevice *radio, enum encoding_type encoding) {
-
-  uint8_t reg;
-
-  radio->encoding = encoding;
-  reg = radio_get(radio, RADIO_PacketConfig1);
-  reg &= ~PacketConfig1_DcFree_Mask;
-  reg |= (encoding << PacketConfig1_DcFree_Shift);
-  radio_set(radio, RADIO_PacketConfig1, reg);
-}
-#endif
 
 static void radio_set_node_address(KRadioDevice *radio, uint8_t address) {
 
@@ -638,6 +467,9 @@ void radioUnloadPacket(KRadioDevice *radio) {
 
 void radioPoll(KRadioDevice *radio) {
 
+  if (! (radio_get(radio, RADIO_IrqFlags2) & IrqFlags2_CrcOk))
+    return;
+
   radioUnloadPacket(radio);
 }
 
@@ -673,25 +505,6 @@ void radioStart(KRadioDevice *radio) {
   }
 
   radio_set_config(radio, GFSK_Rb250Fd250);
-
-  //radio_phy_update_modulation_parameters(radio);
-  //radioPhySetBitRate(radio, 50000);
-  //radioPhySetRfDeviation(radio, 26370);
-  //radioPhySetRfDeviation(radio, 40625/2);
-  //radioPhySetBitRate(radio, 40625);
-
-  radio->channel = 0;
-  //radioPhyUpdateRfFrequency(radio, 433923000);
-
-  //radio_set_preamble_length(radio, 3);
-
-  //radio_set_output_power_dbm(radio, 13); /* Max output with PA0 is 13 dBm */
-
-//  radio_set_encoding(radio, encoding_whitening);
-//  radio_set_modulation(radio, modulation_fsk_gaussian_bt_0p5);
-  //radio_set_encoding(radio, encoding_none);
-  //radio_set_modulation(radio, modulation_fsk_gaussian_bt_1p0);
-  //radio_set_packet_mode(radio);
   radio_set_broadcast_address(radio, 255);
   radio_set_node_address(radio, 1);
 
