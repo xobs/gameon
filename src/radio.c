@@ -160,11 +160,10 @@ static uint8_t const default_registers[] = {
   //RADIO_AfcCtrl, AfcCtrl_AfcLowBeta_Off,
 
   /* Radio output power initialization @0x11*/
-  RADIO_PaLevel, PaLevel_Pa0_On | PaLevel_Pa1_Off | PaLevel_Pa2_Off | 0x1F,
-  //RADIO_PaLevel, 0x7F,
+  RADIO_PaLevel, PaLevel_Pa0_Off | PaLevel_Pa1_On | PaLevel_Pa2_On | 0x1F,
 
   /* Radio Rise/Fall time of ramp up/down in FSK initialization @0x12*/
-  RADIO_PaRamp, PaRamp_500,
+  RADIO_PaRamp, PaRamp_40,
 
   /* Radio overload current protection for PA initialization 0x13*/
   //RADIO_Ocp, Ocp_Ocp_On | 0x0C,
@@ -673,7 +672,7 @@ void radioStart(KRadioDevice *radio) {
     radio_set(radio, cmd, dat);
   }
 
-  radio_set_config(radio, FSK_Rb2Fd5);
+  radio_set_config(radio, GFSK_Rb250Fd250);
 
   //radio_phy_update_modulation_parameters(radio);
   //radioPhySetBitRate(radio, 50000);
