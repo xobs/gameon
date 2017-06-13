@@ -433,6 +433,7 @@ void radioUnloadPacket(KRadioDevice *radio) {
 
   /* Read the "length" byte */
   spiReceive(NULL, sizeof(pkt), &pkt);
+  pkt.length++; /* Note: the length excludes the 'addr' byte, so compensate here */
 
   uint8_t payload[pkt.length - sizeof(pkt)];
 
