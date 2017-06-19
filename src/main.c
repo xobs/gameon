@@ -54,12 +54,31 @@ static void palawanRxMain(void) {
   }
 }
 
+void VectorB0(void) {
+  LPTMR0->CSR = LPTMRx_CSR_TCF | LPTMRx_CSR_TIE | LPTMRx_CSR_TEN;
+}
+
 static void palawanTxMain(void) {
 
   uint32_t last_pin_state    = 0;
   uint32_t pin_unchanged_for = 0;
 
   palawanTxPinSetup();
+
+  /* Set up the low power timer */
+  SIM->SCGC5 |= SIM_SCGC5_LPTMR;
+
+  /* Reset the CSR, in case we're coming out of a warm reset */
+  LPTMR0->CSR = 0;
+
+  /* Select LPR */
+  LPTMR0->PSR = LPTMRx_PSR_PBYP | LPTMRx_PSR_PCS(1);
+  LPTMR0->CMR = 5; /* Approximate poll frequency in ms */
+  LPTMR0->CSR = LPTMRx_CSR_TIE | LPTMRx_CSR_TCF;
+
+  LPTMR0->CSR = LPTMRx_CSR_TIE | LPTMRx_CSR_TCF | LPTMRx_CSR_TEN;
+  __enable_irq();
+  NVIC_EnableIRQ(LPTMR0_IRQn);
 
   // First, make sure we have an address
   while (dhcpRequestAddress(200) < 0)
@@ -69,16 +88,18 @@ static void palawanTxMain(void) {
   while (1) {
     uint32_t pin_state = palawanTxReadPins();
     if (pin_state != last_pin_state) {
-      pin_unchanged_for++;
-
       // Debounce filter.  Only send if it's settled for a few attempts.
       if (!(pin_unchanged_for & 0x1f)) {
         radioSend(radioDevice, 0, radio_prot_input, sizeof(pin_state),
                   &pin_state);
         last_pin_state = pin_state;
       }
+
+      pin_unchanged_for++;
     } else
       pin_unchanged_for = 0;
+
+    asm("WFI");
   }
 }
 
