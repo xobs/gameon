@@ -1,11 +1,8 @@
+#include "about.h"
 #include "kl17.h"
 #include "radio.h"
 #include <stdint.h>
 #include <string.h>
-
-struct about_response {
-  uint8_t gitver[16];
-} __attribute__((packed));
 
 static void about_request(uint8_t port, uint8_t src, uint8_t dst,
                           uint8_t length, const void *data) {
