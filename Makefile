@@ -1,9 +1,5 @@
 PACKAGE    = gameon
-LIBS       =
-VERSION    = v1.0
-ADD_CFLAGS =
-ADD_LFLAGS = lib/*.a
-EXTRA_DIST =
+
 
 TRGT      ?= arm-none-eabi-
 CC         = $(TRGT)gcc
@@ -13,16 +9,15 @@ OBJCOPY    = $(TRGT)objcopy
 LDSCRIPT   = palawan.ld
 DBG_CFLAGS = -ggdb -g -DDEBUG -Wall
 DBG_LFLAGS = -ggdb -g -Wall
-CFLAGS     = $(ADD_CFLAGS) \
-             -I. -Iinclude -Igrainuum \
+CFLAGS     = -I. -Iinclude -Igrainuum \
              -fsingle-precision-constant -Wall -Wextra \
              -mcpu=cortex-m0plus -mfloat-abi=soft -mthumb \
 						 -fno-builtin -fno-unwind-tables \
              -ffunction-sections -fdata-sections -fno-common \
-             -fomit-frame-pointer -falign-functions=16 -nostdlib -Os
+             -fomit-frame-pointer -falign-functions=16 -Os
 CXXFLAGS   = $(CFLAGS) -std=c++11 -fno-rtti -fno-exceptions
-LFLAGS     = $(ADD_LFLAGS) $(CFLAGS) \
-             -nostartfiles -nostdlib -nodefaultlibs \
+LFLAGS     = $(CFLAGS) \
+             -nostartfiles \
              -Wl,--gc-sections \
              -Wl,--no-warn-mismatch,--script=$(LDSCRIPT),--build-id=none
 
