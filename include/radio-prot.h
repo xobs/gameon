@@ -12,6 +12,7 @@ enum radio_protocols {
   radio_prot_firmware_data    = 9,
   radio_prot_about_request    = 10,
   radio_prot_about_response   = 11,
+  radio_prot_input            = 12,
 };
 
 #endif /* RADIO_PROT_H */
