@@ -117,6 +117,7 @@ enum palawan_model palawanModel(void) {
  *          and before any other initialization.
  */
 void __early_init(void) {
+  extern int radioPowerCycle(void);
   radioPowerCycle();
   kl02_clk_init();
 }
