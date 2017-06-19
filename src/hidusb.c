@@ -1,13 +1,12 @@
-#include <string.h>
 #include "grainuum.h"
 #include "kl17.h"
+#include <string.h>
 
-enum usb_strings
-{
-  product_name = 1,
-  serial_number = 2,
-  manufacturer_name = 3,
-  interface_name = 4,
+enum usb_strings {
+  product_name       = 1,
+  serial_number      = 2,
+  manufacturer_name  = 3,
+  interface_name     = 4,
   configuration_name = 5,
 };
 
@@ -23,7 +22,7 @@ static struct GrainuumUSB defaultUsbPhy = {
     .usbdnSAddr = (uint32_t)&FGPIOB->PSOR,
     .usbdnCAddr = (uint32_t)&FGPIOB->PCOR,
     .usbdnDAddr = (uint32_t)&FGPIOB->PDDR,
-    .usbdnMask = (1 << 6),
+    .usbdnMask  = (1 << 6),
     .usbdnShift = 6,
 
     /* PTB5 */
@@ -31,17 +30,17 @@ static struct GrainuumUSB defaultUsbPhy = {
     .usbdpSAddr = (uint32_t)&FGPIOB->PSOR,
     .usbdpCAddr = (uint32_t)&FGPIOB->PCOR,
     .usbdpDAddr = (uint32_t)&FGPIOB->PDDR,
-    .usbdpMask = (1 << 5),
+    .usbdpMask  = (1 << 5),
     .usbdpShift = 5,
 };
 
-void set_usb_config_num(struct GrainuumUSB *usb, int configNum)
-{
+void set_usb_config_num(struct GrainuumUSB *usb, int configNum) {
   (void)usb;
   (void)configNum;
   ;
 }
 
+// clang-format off
 static const uint8_t hid_report_descriptor[] = {
     0x05, 0x01, // (GLOBAL) USAGE_PAGE         0x0001 Generic Desktop Page
     0x09, 0x06, // (LOCAL)  USAGE              0x00010006 Keyboard (CA=Application Collection)
@@ -148,18 +147,18 @@ static const struct usb_configuration_descriptor configuration_descriptor = {
                                                              /* }                              */
     },
 };
+// clang-format on
 
 #define USB_STR_BUF_LEN 64
 
 uint32_t str_buf_storage[USB_STR_BUF_LEN / sizeof(uint32_t)];
-static int send_string_descriptor(const char *str, const void **data)
-{
+static int send_string_descriptor(const char *str, const void **data) {
   int len;
   int max_len;
-  uint8_t *str_buf = (uint8_t *)str_buf_storage;
+  uint8_t *str_buf    = (uint8_t *)str_buf_storage;
   uint8_t *str_offset = str_buf;
 
-  len = strlen(str);
+  len     = strlen(str);
   max_len = (USB_STR_BUF_LEN / 2) - 2;
 
   if (len > max_len)
@@ -168,8 +167,7 @@ static int send_string_descriptor(const char *str, const void **data)
   *str_offset++ = (len * 2) + 2; // Two bytes for length count
   *str_offset++ = DT_STRING;     // Sending a string descriptor
 
-  while (len--)
-  {
+  while (len--) {
     *str_offset++ = *str++;
     *str_offset++ = 0;
   }
@@ -180,17 +178,14 @@ static int send_string_descriptor(const char *str, const void **data)
   return str_buf[0];
 }
 
-static int get_string_descriptor(struct GrainuumUSB *usb,
-                                 uint32_t num,
-                                 const void **data)
-{
+static int get_string_descriptor(struct GrainuumUSB *usb, uint32_t num,
+                                 const void **data) {
 
   static const uint8_t en_us[] = {0x04, DT_STRING, 0x09, 0x04};
 
   (void)usb;
 
-  if (num == 0)
-  {
+  if (num == 0) {
     *data = en_us;
     return sizeof(en_us);
   }
@@ -213,30 +208,24 @@ static int get_string_descriptor(struct GrainuumUSB *usb,
   return 0;
 }
 
-static int get_device_descriptor(struct GrainuumUSB *usb,
-                                 uint32_t num,
-                                 const void **data)
-{
+static int get_device_descriptor(struct GrainuumUSB *usb, uint32_t num,
+                                 const void **data) {
 
   (void)usb;
 
-  if (num == 0)
-  {
+  if (num == 0) {
     *data = &device_descriptor;
     return sizeof(device_descriptor);
   }
   return 0;
 }
 
-static int get_hid_report_descriptor(struct GrainuumUSB *usb,
-                                     uint32_t num,
-                                     const void **data)
-{
+static int get_hid_report_descriptor(struct GrainuumUSB *usb, uint32_t num,
+                                     const void **data) {
 
   (void)usb;
 
-  if (num == 0)
-  {
+  if (num == 0) {
     *data = &hid_report_descriptor;
     return sizeof(hid_report_descriptor);
   }
@@ -244,30 +233,24 @@ static int get_hid_report_descriptor(struct GrainuumUSB *usb,
   return 0;
 }
 
-static int get_configuration_descriptor(struct GrainuumUSB *usb,
-                                        uint32_t num,
-                                        const void **data)
-{
+static int get_configuration_descriptor(struct GrainuumUSB *usb, uint32_t num,
+                                        const void **data) {
 
   (void)usb;
 
-  if (num == 0)
-  {
+  if (num == 0) {
     *data = &configuration_descriptor;
     return configuration_descriptor.wTotalLength;
   }
   return 0;
 }
 
-static int get_descriptor(struct GrainuumUSB *usb,
-                          const void *packet,
-                          const void **response)
-{
+static int get_descriptor(struct GrainuumUSB *usb, const void *packet,
+                          const void **response) {
 
   const struct usb_setup_packet *setup = packet;
 
-  switch (setup->wValueH)
-  {
+  switch (setup->wValueH) {
   case DT_DEVICE:
     return get_device_descriptor(usb, setup->wValueL, response);
 
@@ -288,10 +271,8 @@ static uint32_t ep1_buffer[NUM_BUFFERS][BUFFER_SIZE / sizeof(uint32_t)];
 static uint8_t ep1_buffer_sizes[NUM_BUFFERS];
 static uint8_t ep1_buffer_head;
 static uint8_t ep1_buffer_tail;
-static void *get_usb_ep1_buffer(struct GrainuumUSB *usb,
-                                uint8_t epNum,
-                                int32_t *size)
-{
+static void *get_usb_ep1_buffer(struct GrainuumUSB *usb, uint8_t epNum,
+                                int32_t *size) {
   (void)usb;
   (void)epNum;
 
@@ -300,18 +281,14 @@ static void *get_usb_ep1_buffer(struct GrainuumUSB *usb,
   return ep1_buffer[ep1_buffer_head];
 }
 
-static int received_data(struct GrainuumUSB *usb,
-                         uint8_t epNum,
-                         uint32_t bytes,
-                         const void *data)
-{
+static int received_data(struct GrainuumUSB *usb, uint8_t epNum, uint32_t bytes,
+                         const void *data) {
   (void)usb;
   (void)epNum;
   (void)data;
 
   /* If we receive data for EP1, advance the EP1 buffer */
-  if (epNum == 1)
-  {
+  if (epNum == 1) {
     ep1_buffer_sizes[ep1_buffer_head] = bytes;
     ep1_buffer_head = (ep1_buffer_head + 1) & (NUM_BUFFERS - 1);
   }
@@ -320,8 +297,7 @@ static int received_data(struct GrainuumUSB *usb,
   return 0;
 }
 
-static int send_data_finished(struct GrainuumUSB *usb, int result)
-{
+static int send_data_finished(struct GrainuumUSB *usb, int result) {
   (void)usb;
   (void)result;
 
@@ -329,39 +305,34 @@ static int send_data_finished(struct GrainuumUSB *usb, int result)
 }
 
 static struct GrainuumConfig hid_link = {
-    .getDescriptor = get_descriptor,
+    .getDescriptor    = get_descriptor,
     .getReceiveBuffer = get_usb_ep1_buffer,
-    .receiveData = received_data,
+    .receiveData      = received_data,
     .sendDataFinished = send_data_finished,
-    .setConfigNum = set_usb_config_num,
+    .setConfigNum     = set_usb_config_num,
 };
 
 static GRAINUUM_BUFFER(phy_queue, 4);
 
-void VectorBC(void)
-{
+void VectorBC(void) {
   grainuumCaptureI(&defaultUsbPhy, GRAINUUM_BUFFER_ENTRY(phy_queue));
 
   /* Clear all pending interrupts on this port. */
   PORTB->ISFR = 0xFFFFFFFF;
 }
 
-void grainuumReceivePacket(struct GrainuumUSB *usb)
-{
+void grainuumReceivePacket(struct GrainuumUSB *usb) {
   (void)usb;
   GRAINUUM_BUFFER_ADVANCE(phy_queue);
 }
 
-void grainuumInitPre(struct GrainuumUSB *usb)
-{
+void grainuumInitPre(struct GrainuumUSB *usb) {
   (void)usb;
   GRAINUUM_BUFFER_INIT(phy_queue);
 }
 
-static void process_next_usb_event(struct GrainuumUSB *usb)
-{
-  if (!GRAINUUM_BUFFER_IS_EMPTY(phy_queue))
-  {
+static void process_next_usb_event(struct GrainuumUSB *usb) {
+  if (!GRAINUUM_BUFFER_IS_EMPTY(phy_queue)) {
     uint8_t *in_ptr = (uint8_t *)GRAINUUM_BUFFER_TOP(phy_queue);
 
     // Advance to the next packet (allowing us to be reentrant)
@@ -374,18 +345,21 @@ static void process_next_usb_event(struct GrainuumUSB *usb)
   }
 }
 
-void usbProcess(void (*received_data)(void *data, uint32_t size))
-{
+void usbProcess(void (*received_data)(void *data, uint32_t size)) {
   process_next_usb_event(&defaultUsbPhy);
-  if (ep1_buffer_head != ep1_buffer_tail)
-  {
-    received_data(ep1_buffer[ep1_buffer_tail], ep1_buffer_sizes[ep1_buffer_tail]);
+  if (ep1_buffer_head != ep1_buffer_tail) {
+    received_data(ep1_buffer[ep1_buffer_tail],
+                  ep1_buffer_sizes[ep1_buffer_tail]);
     ep1_buffer_tail = (ep1_buffer_tail + 1) & (NUM_BUFFERS - 1);
   }
 }
 
-void usbStart(void)
-{
+int usbSend(const void *data, int len) {
+  /* We only support EP1 for now */
+  return grainuumSendData(&defaultUsbPhy, 1, data, len);
+}
+
+void usbStart(void) {
   /* Unlock PORTA and PORTB */
   SIM->SCGC5 |= SIM_SCGC5_PORTA | SIM_SCGC5_PORTB;
 
@@ -398,11 +372,9 @@ void usbStart(void)
 
   {
     int i;
-    for (i = 0; i < 1000; i++)
-    {
+    for (i = 0; i < 1000; i++) {
       int j;
-      for (j = 0; j < 77; j++)
-      {
+      for (j = 0; j < 77; j++) {
         asm("");
       }
     }
