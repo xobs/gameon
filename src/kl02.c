@@ -1,5 +1,5 @@
-#include "palawan.h"
 #include "kl17.h"
+#include "palawan.h"
 
 #define PAIR_CFG_ADC_NUM (23)
 
@@ -16,10 +16,10 @@
 #define PALAWAN_TX_VALUE_4 65483
 #define PALAWAN_TX_VALUE_4_PAIR 65127
 
-#define KINETIS_MCG_FLL_DMX32 1             /* Fine-tune for 32.768 kHz */
-#define KINETIS_MCG_FLL_DRS 1               /* 1464x FLL factor */
-#define KINETIS_MCG_FLL_OUTDIV1 1           /* Divide 48 MHz FLL by 1 => 48 MHz */
-#define KINETIS_MCG_FLL_OUTDIV4 2           /* Divide OUTDIV1 output by 2 => 24 MHz */
+#define KINETIS_MCG_FLL_DMX32 1   /* Fine-tune for 32.768 kHz */
+#define KINETIS_MCG_FLL_DRS 1     /* 1464x FLL factor */
+#define KINETIS_MCG_FLL_OUTDIV1 1 /* Divide 48 MHz FLL by 1 => 48 MHz */
+#define KINETIS_MCG_FLL_OUTDIV4 2 /* Divide OUTDIV1 output by 2 => 24 MHz */
 #define KINETIS_SYSCLK_FREQUENCY 47972352UL /* 32.768 kHz * 1464 (~48 MHz) */
 
 static enum palawan_model _model;
@@ -31,13 +31,16 @@ static enum palawan_model _model;
  *
  * @special
  */
-void kl02_clk_init(void)
-{
+void kl02_clk_init(void) {
   /* Disable COP watchdog */
   SIM->COPC = 0;
 
   /* Enable PORTA and PORGB */
   SIM->SCGC5 |= SIM_SCGC5_PORTA | SIM_SCGC5_PORTB;
+
+  /* Palawan Rx is the only board with a crystal */
+  if (palawanModel() != palawan_rx)
+    return;
 
   /* --- MCG mode: FEI (default out of reset) ---
      f_MCGOUTCLK = f_int * F
@@ -62,19 +65,18 @@ void kl02_clk_init(void)
    *   f_BUS = f_MCGOUTCLK / OUTDIV1 / OUTDIV4 =  MHz / 4 = 24 MHz
    */
 
-  SIM->SOPT2 =
-      SIM_SOPT2_TPMSRC(1); /* MCGFLLCLK clock or MCGPLLCLK/2 */
-                           /* PLLFLLSEL=0 -> MCGFLLCLK */
+  SIM->SOPT2 = SIM_SOPT2_TPMSRC(1); /* MCGFLLCLK clock or MCGPLLCLK/2 */
+                                    /* PLLFLLSEL=0 -> MCGFLLCLK */
 
   /* The MCGOUTCLK is divided by OUTDIV1 and OUTDIV4:
    * OUTDIV1 (divider for core/system and bus/flash clock)
    * OUTDIV4 (additional divider for bus/flash clock) */
-  SIM->CLKDIV1 =
-      SIM_CLKDIV1_OUTDIV1(KINETIS_MCG_FLL_OUTDIV1 - 1) |
-      SIM_CLKDIV1_OUTDIV4(KINETIS_MCG_FLL_OUTDIV4 - 1);
+  SIM->CLKDIV1 = SIM_CLKDIV1_OUTDIV1(KINETIS_MCG_FLL_OUTDIV1 - 1) |
+                 SIM_CLKDIV1_OUTDIV4(KINETIS_MCG_FLL_OUTDIV4 - 1);
 
   /* EXTAL0 and XTAL0 */
-  //  PORTA->PCR[18] &= ~0x01000700; /* Set PA18 to analog (default) */  // defaults should already be good
+  //  PORTA->PCR[18] &= ~0x01000700; /* Set PA18 to analog (default) */  //
+  //  defaults should already be good
   //  PORTA->PCR[19] &= ~0x01000700; /* Set PA19 to analog (default) */
 
   OSC0->CR = 0xC;
@@ -84,11 +86,10 @@ void kl02_clk_init(void)
   /* (1) Select the external clock source in C2 register.
          Use low-power OSC mode (HGO0=0) which enables internal feedback
          resistor, for 32.768 kHz crystal configuration.  */
-  MCG->C2 =
-      MCG_C2_RANGE0(0) | /* low frequency range (<= 40 kHz) */
-      MCG_C2_EREFS0;     /* external reference (using a crystal) */
+  MCG->C2 = MCG_C2_RANGE0(0) | /* low frequency range (<= 40 kHz) */
+            MCG_C2_EREFS0;     /* external reference (using a crystal) */
   /* (2) Write to C1 to select the clock mode. */
-  MCG->C1 =                /* Clear the IREFS bit to switch to the external reference. */
+  MCG->C1 = /* Clear the IREFS bit to switch to the external reference. */
       MCG_C1_CLKS_FLLPLL | /* Use FLL for system clock, MCGCLKOUT. */
       MCG_C1_FRDIV(0);     /* Don't divide 32kHz ERCLK FLL reference. */
   MCG->C6 = 0;             /* PLLS=0: Select FLL as MCG source, not PLL */
@@ -115,8 +116,7 @@ void kl02_clk_init(void)
      seems to omit it. */
 }
 
-enum palawan_model palawanModel(void)
-{
+enum palawan_model palawanModel(void) {
   /* The strapping resistors were wired up to a pin that can't do ADC */
   return palawan_rx;
 #if 0
@@ -236,22 +236,7 @@ enum palawan_model palawanModel(void)
  * @details This initialization must be performed just after stack setup
  *          and before any other initialization.
  */
-void __early_init(void)
-{
-
-  switch (palawanModel())
-  {
-  case palawan_tx:
-    break;
-
-  case palawan_rx:
-    break;
-
-  default:
-    asm("bkpt #0");
-    break;
-  }
-
+void __early_init(void) {
   radioPowerCycle();
   kl02_clk_init();
 }
