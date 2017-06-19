@@ -28,12 +28,12 @@ static void init_crt(void) {
 
 extern void __early_init(void);
 
-__attribute__((noreturn)) extern void main(void);
+__attribute__((noreturn)) extern void palawan_main(void);
 
 __attribute__((noreturn)) void Reset_Handler(void) {
   init_crt();
   __early_init();
 
   boot_token.boot_count = 0;
-  main();
+  palawan_main();
 }
