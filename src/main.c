@@ -10,6 +10,7 @@ void usbProcess(void (*received_data)(void *data, uint32_t size));
 void echoServerSetup(KRadioDevice *radio);
 void firmwareServerSetup(KRadioDevice *radio);
 void aboutServerSetup(KRadioDevice *radio);
+void inputServerSetup(KRadioDevice *radio);
 
 static void received_data(void *data, uint32_t bytes) {
   (void)data;
@@ -23,6 +24,48 @@ static void configure_led(void) {
   FGPIOB->PSOR = (1 << 1);
 }
 
+static void palawanRxMain(void) {
+  radioSetAddress(radioDevice, 0);
+
+  inputServerSetup(radioDevice);
+  dhcpServerSetup(radioDevice);
+  firmwareServerSetup(radioDevice);
+  echoServerSetup(radioDevice);
+  aboutServerSetup(radioDevice);
+
+  usbStart();
+
+  while (1) {
+    extern uint8_t packetAvailable;
+    usbProcess(received_data);
+    if (packetAvailable) {
+      packetAvailable = 0;
+      radioPoll(radioDevice);
+    }
+  }
+}
+
+static void palawanTxMain(void) {
+
+  uint32_t last_pin_state = 0;
+
+  palawanTxPinSetup();
+
+  // First, make sure we have an address
+  while (dhcpRequestAddress(200) < 0)
+    ;
+
+  // Next, enter a loop looking for changes
+  while (1) {
+    uint32_t pin_state = palawanTxReadPins();
+    if (pin_state != last_pin_state) {
+      radioSend(radioDevice, 0, radio_prot_input, sizeof(pin_state),
+                &pin_state);
+      last_pin_state = pin_state;
+    }
+  }
+}
+
 __attribute__((noreturn)) void palawan_main(void) {
   configure_led();
   spiInit();
@@ -31,26 +74,17 @@ __attribute__((noreturn)) void palawan_main(void) {
   radioStart(radioDevice);
   switch (palawanModel()) {
   case palawan_rx:
-    radioSetAddress(radioDevice, 0);
-    dhcpServerSetup(radioDevice);
-    echoServerSetup(radioDevice);
-    aboutServerSetup(radioDevice);
-    firmwareServerSetup(radioDevice);
-    usbStart();
-
-    while (1) {
-      extern uint8_t packetAvailable;
-      usbProcess(received_data);
-      if (packetAvailable) {
-        packetAvailable = 0;
-        radioPoll(radioDevice);
-      }
-    }
-  case palawan_tx:
+    palawanRxMain();
     break;
+
+  case palawan_tx:
+    palawanTxMain();
+    break;
+
   default:
     asm("bkpt #63");
   }
+
   while (1)
     ;
 }
