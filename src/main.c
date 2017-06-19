@@ -1,14 +1,13 @@
+#include "dhcp-client.h"
 #include "dhcp-server.h"
 #include "input-server.h"
 #include "kl17.h"
+#include "palawan-tx.h"
 #include "palawan.h"
 #include "radio.h"
 #include "spi.h"
+#include "usb.h"
 #include <stdint.h>
-
-void usbStart(void);
-void usbProcess(void (*received_data)(void *data, uint32_t size));
-int usbSend(const void *data, int len);
 
 void echoServerSetup(KRadioDevice *radio);
 void firmwareServerSetup(KRadioDevice *radio);
@@ -73,7 +72,7 @@ static void palawanTxMain(void) {
       pin_unchanged_for++;
 
       // Debounce filter.  Only send if it's settled for a few attempts.
-      if ((pin_unchanged_for == 10) || !(pin_unchanged_for & 0xff)) {
+      if (!(pin_unchanged_for & 0x1f)) {
         radioSend(radioDevice, 0, radio_prot_input, sizeof(pin_state),
                   &pin_state);
         last_pin_state = pin_state;

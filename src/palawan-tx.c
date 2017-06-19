@@ -1,5 +1,4 @@
 #include "kl17.h"
-#include "memio.h"
 
 void palawanTxPinSetup(void) {
   PORTA->PCR[3]  = PORTx_PCRn_MUX(1) | PORTx_PCRn_PE | PORTx_PCRn_PS;
