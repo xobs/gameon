@@ -15,6 +15,7 @@ struct boot_token {
   uint16_t reserved;
 } __attribute__((packed));
 __attribute__((section("boot_token"))) extern struct boot_token boot_token;
+#define BOOT_MAGIC 0x74624346
 
 enum palawan_model {
   palawan_unknown = 0,
