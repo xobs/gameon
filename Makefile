@@ -10,6 +10,7 @@ LDSCRIPT   = palawan.ld
 DBG_CFLAGS = -ggdb -g -DDEBUG -Wall
 DBG_LFLAGS = -ggdb -g -Wall
 CFLAGS     = -I. -Iinclude -Igrainuum \
+						 -DVERSION=\"$(GIT_VERSION)\" \
              -fsingle-precision-constant -Wall -Wextra \
              -mcpu=cortex-m0plus -mfloat-abi=soft -mthumb \
 						 -fno-builtin -fno-unwind-tables \
@@ -31,7 +32,7 @@ CXXOBJS    = $(addprefix $(OBJ_DIR)/, $(notdir $(CPPSOURCES:.cpp=.o)))
 AOBJS      = $(addprefix $(OBJ_DIR)/, $(notdir $(ASOURCES:.S=.o)))
 OBJECTS    = $(COBJS) $(CXXOBJS) $(AOBJS)
 VPATH      = src grainuum
-
+GIT_VERSION= $(shell git describe --dirty --always --tags)
 QUIET      = @
 
 ALL        = all
