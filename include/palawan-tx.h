@@ -5,5 +5,7 @@
 
 uint32_t palawanTxReadPins(void);
 void palawanTxPinSetup(void);
+void palawanTxEnableTimer(void);
+void palawanTxVerifyFirmware(void);
 
 #endif /* PALAWAN_TX_H */
