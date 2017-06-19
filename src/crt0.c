@@ -1,5 +1,5 @@
-#include <stdint.h>
 #include "kl17.h"
+#include <stdint.h>
 
 /* Values exported by the linker */
 extern uint32_t _eflash;
@@ -16,7 +16,6 @@ struct boot_token {
 
 __attribute__((section("boot_token"))) extern struct boot_token boot_token;
 
-
 void memcpy32(uint32_t *src, uint32_t *dest, uint32_t count) {
   count /= sizeof(*src);
   while (count--)
@@ -24,23 +23,20 @@ void memcpy32(uint32_t *src, uint32_t *dest, uint32_t count) {
 }
 
 static void init_crt(void) {
-
   /* Copy data section to RAM */
-  memcpy32(&_eflash, &_sdtext,
-           (uint32_t)&_edtext - (uint32_t)&_sdtext);
+  memcpy32(&_eflash, &_sdtext, (uint32_t)&_edtext - (uint32_t)&_sdtext);
 
   /* Clear BSS */
   uint32_t *dest = &_sbss;
-  while (dest < &_ebss) *dest++ = 0;
+  while (dest < &_ebss)
+    *dest++ = 0;
 }
 
 extern void __early_init(void);
 
-__attribute__ ((noreturn))
-extern void main(void);
+__attribute__((noreturn)) extern void main(void);
 
-__attribute__ ((noreturn))
-void Reset_Handler(void) {
+__attribute__((noreturn)) void Reset_Handler(void) {
   init_crt();
   __early_init();
 
