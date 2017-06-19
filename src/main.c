@@ -54,10 +54,6 @@ static void palawanRxMain(void) {
   }
 }
 
-void VectorB0(void) {
-  LPTMR0->CSR = LPTMRx_CSR_TCF | LPTMRx_CSR_TIE | LPTMRx_CSR_TEN;
-}
-
 static void palawanTxMain(void) {
 
   uint32_t last_pin_state    = 0;
@@ -65,24 +61,15 @@ static void palawanTxMain(void) {
 
   palawanTxPinSetup();
 
-  /* Set up the low power timer */
-  SIM->SCGC5 |= SIM_SCGC5_LPTMR;
-
-  /* Reset the CSR, in case we're coming out of a warm reset */
-  LPTMR0->CSR = 0;
-
-  /* Select LPR */
-  LPTMR0->PSR = LPTMRx_PSR_PBYP | LPTMRx_PSR_PCS(1);
-  LPTMR0->CMR = 5; /* Approximate poll frequency in ms */
-  LPTMR0->CSR = LPTMRx_CSR_TIE | LPTMRx_CSR_TCF;
-
-  LPTMR0->CSR = LPTMRx_CSR_TIE | LPTMRx_CSR_TCF | LPTMRx_CSR_TEN;
-  __enable_irq();
-  NVIC_EnableIRQ(LPTMR0_IRQn);
-
   // First, make sure we have an address
   while (dhcpRequestAddress(200) < 0)
     ;
+
+  // Update the firmware, if necessary.
+  palawanTxVerifyFirmware();
+
+  // Start a timer, enabling us to be "asleep" most of the time.
+  palawanTxEnableTimer();
 
   // Next, enter a loop looking for changes
   while (1) {
