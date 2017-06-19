@@ -428,9 +428,8 @@ void radioUnloadPacket(KRadioDevice *radio) {
 
   /* Read the "length" byte */
   spiReceive(NULL, sizeof(pkt), &pkt);
-  pkt
-      .length++; /* Note: the length excludes the 'addr' byte, so compensate
-                    here */
+  pkt.length++; /* Note: the length excludes the 'addr' byte, so compensate
+                   here */
 
   uint8_t payload[pkt.length - sizeof(pkt)];
 
@@ -623,7 +622,8 @@ void radioSend(KRadioDevice *radio, uint8_t addr, uint8_t prot, size_t bytes,
   reg = RADIO_Fifo | 0x80;
   spiSend(NULL, 1, &reg);           /* Select the FIFO */
   spiSend(NULL, sizeof(pkt), &pkt); /* Load the header into the Fifo */
-  spiSend(NULL, bytes, payload);    /* Load the payload into the Fifo */
+  if (bytes)
+    spiSend(NULL, bytes, payload); /* Load the payload into the Fifo */
   radio_unselect(radio);
 
 #if 0
