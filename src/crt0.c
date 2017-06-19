@@ -1,4 +1,5 @@
 #include "kl17.h"
+#include "palawan.h"
 #include <stdint.h>
 
 /* Values exported by the linker */
@@ -8,13 +9,6 @@ extern uint32_t _edtext;
 extern uint32_t _sbss;
 extern uint32_t _ebss;
 extern uint32_t __main_stack_end__;
-
-struct boot_token {
-  uint32_t magic;
-  uint32_t boot_count;
-};
-
-__attribute__((section("boot_token"))) extern struct boot_token boot_token;
 
 void memcpy32(uint32_t *src, uint32_t *dest, uint32_t count) {
   count /= sizeof(*src);
