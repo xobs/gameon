@@ -58,6 +58,9 @@ $(DEBUG): $(TARGET)
 $(OBJ_DIR):
 	$(QUIET) mkdir $(OBJ_DIR)
 
+include/gitversion.h: .git/index .git/HEAD
+	echo. >> include/gitversion.h
+
 $(COBJS) : $(OBJ_DIR)/%.o : %.c Makefile
 	$(QUIET) echo "  CC       $<	$(notdir $@)"
 	$(QUIET) $(CC) -c $< $(CFLAGS) -o $@ -MMD
