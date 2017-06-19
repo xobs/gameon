@@ -1,24 +1,24 @@
 
-#include <string.h>
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
+#include "TransceiverReg.h"
 #include "kl17.h"
 #include "radio.h"
-#include "TransceiverReg.h"
 #include "spi.h"
 
-#define REG_TEMP1                 0x4e
-#define REG_TEMP1_START             (1 << 3)
-#define REG_TEMP1_RUNNING           (1 << 2)
-#define REG_TEMP2                 0x4f
+#define REG_TEMP1 0x4e
+#define REG_TEMP1_START (1 << 3)
+#define REG_TEMP1_RUNNING (1 << 2)
+#define REG_TEMP2 0x4f
 
-#define RADIO_XTAL_FREQUENCY      32000000 /* 32 MHz crystal */
-#define RADIO_FIFO_DEPTH          66
-#define RADIO_BUFFER_SIZE         64
-#define RADIO_BUFFER_MASK         (RADIO_BUFFER_SIZE - 1)
+#define RADIO_XTAL_FREQUENCY 32000000 /* 32 MHz crystal */
+#define RADIO_FIFO_DEPTH 66
+#define RADIO_BUFFER_SIZE 64
+#define RADIO_BUFFER_MASK (RADIO_BUFFER_SIZE - 1)
 
-#define MAX_PACKET_HANDLERS       10
+#define MAX_PACKET_HANDLERS 10
 
 /* This number was guessed based on observations (133 at 30 degrees) */
 static int temperature_offset = 133 + 30;
@@ -32,31 +32,29 @@ enum radio_mode {
 };
 
 typedef struct _PacketHandler {
-    void (*handler)(uint8_t prot, uint8_t src, uint8_t dst,
-                    uint8_t length, const void *data);
-      uint8_t prot;
+  void (*handler)(uint8_t prot, uint8_t src, uint8_t dst, uint8_t length,
+                  const void *data);
+  uint8_t prot;
 } PacketHandler;
 
 /* Kinetis Radio definition */
 typedef struct _KRadioDevice {
-  uint8_t                 rx_buf[RADIO_BUFFER_SIZE];
-  uint32_t                rx_buf_end;
-  uint32_t                rx_buf_pos;
-  uint8_t                 address;
-  uint8_t                 broadcast;
-  uint8_t                 num_handlers;
-  PacketHandler           handlers[MAX_PACKET_HANDLERS];
-  void                    (*default_handler)(uint8_t prot,
-                                             uint8_t src,
-                                             uint8_t dst,
-                                             uint8_t length,
-                                             const void *data);
-  enum radio_mode         mode;
+  uint8_t rx_buf[RADIO_BUFFER_SIZE];
+  uint32_t rx_buf_end;
+  uint32_t rx_buf_pos;
+  uint8_t address;
+  uint8_t broadcast;
+  uint8_t num_handlers;
+  PacketHandler handlers[MAX_PACKET_HANDLERS];
+  void (*default_handler)(uint8_t prot, uint8_t src, uint8_t dst,
+                          uint8_t length, const void *data);
+  enum radio_mode mode;
 } KRadioDevice;
 
 KRadioDevice KRADIO1;
 #define radioDevice &KRADIO1
 
+// clang-format off
 static uint8_t const default_registers[] = {
   /* Radio operation mode initialization @0x01*/
   RADIO_OpMode, OpMode_Sequencer_On | OpMode_Listen_Off | OpMode_StandBy,
@@ -335,9 +333,8 @@ typedef enum {
   OOK_Rb9_6Bw19_2,    ///< OOK, Whitening, Rb = 9.6kbs,  Rx Bandwidth = 19.2kHz.
   OOK_Rb19_2Bw38_4,   ///< OOK, Whitening, Rb = 19.2kbs, Rx Bandwidth = 38.4kHz.
   OOK_Rb32Bw64,       ///< OOK, Whitening, Rb = 32kbs,   Rx Bandwidth = 64kHz.
-
-//	Test,
 } ModemConfigChoice;
+// clang-format on
 
 static void spiSend(void *ignored, int count, const void *data) {
   (void)ignored;
@@ -354,7 +351,7 @@ static void spiReceive(void *ignored, int count, void *data) {
   int i;
   uint8_t *bytes = data;
 
-  for (i = 0; i < count; i++)
+  for (i     = 0; i < count; i++)
     bytes[i] = spiTransceive(0xff);
 }
 
@@ -379,14 +376,12 @@ int radioDump(KRadioDevice *radio, uint8_t addr, void *bfr, int count) {
 }
 
 uint8_t data_backing[64];
-__attribute__((used))
-uint8_t *radioDumpFifo(void) {
+__attribute__((used)) uint8_t *radioDumpFifo(void) {
   radioDump(NULL, 0, data_backing, sizeof(data_backing));
   return data_backing;
 }
 
-__attribute__((used))
-uint8_t *radioDumpData(uint8_t start, uint8_t len) {
+__attribute__((used)) uint8_t *radioDumpData(uint8_t start, uint8_t len) {
   radioDump(NULL, start, data_backing, len);
   return data_backing;
 }
@@ -433,7 +428,9 @@ void radioUnloadPacket(KRadioDevice *radio) {
 
   /* Read the "length" byte */
   spiReceive(NULL, sizeof(pkt), &pkt);
-  pkt.length++; /* Note: the length excludes the 'addr' byte, so compensate here */
+  pkt
+      .length++; /* Note: the length excludes the 'addr' byte, so compensate
+                    here */
 
   uint8_t payload[pkt.length - sizeof(pkt)];
 
@@ -447,10 +444,7 @@ void radioUnloadPacket(KRadioDevice *radio) {
   bool handled = false;
   for (i = 0; i < radio->num_handlers; i++) {
     if (radio->handlers[i].prot == pkt.prot) {
-      radio->handlers[i].handler(pkt.prot,
-                                 pkt.src,
-                                 pkt.dst,
-                                 sizeof(payload),
+      radio->handlers[i].handler(pkt.prot, pkt.src, pkt.dst, sizeof(payload),
                                  payload);
       handled = true;
       break;
@@ -459,16 +453,13 @@ void radioUnloadPacket(KRadioDevice *radio) {
 
   /* If the packet wasn't handled, pass it to the default handler */
   if (!handled && radio->default_handler)
-      radio->default_handler(pkt.prot,
-                             pkt.src,
-                             pkt.dst,
-                             sizeof(payload),
-                             payload);
+    radio->default_handler(pkt.prot, pkt.src, pkt.dst, sizeof(payload),
+                           payload);
 }
 
 void radioPoll(KRadioDevice *radio) {
 
-  if (! (radio_get(radio, RADIO_IrqFlags2) & IrqFlags2_CrcOk))
+  if (!(radio_get(radio, RADIO_IrqFlags2) & IrqFlags2_CrcOk))
     return;
 
   radioUnloadPacket(radio);
@@ -517,18 +508,13 @@ void radioStart(KRadioDevice *radio) {
 
   /* Move into "Rx" mode */
   radio->mode = mode_receiving;
-  radio_set(radio, RADIO_OpMode, OpMode_Sequencer_On
-                               | OpMode_Listen_Off
-                               | OpMode_Receiver);
+  radio_set(radio, RADIO_OpMode,
+            OpMode_Sequencer_On | OpMode_Listen_Off | OpMode_Receiver);
 }
 
-void radioSetHandler(KRadioDevice *radio,
-                     uint8_t prot,
-                     void (*handler)(uint8_t prot,
-                                     uint8_t src,
-                                     uint8_t dst,
-                                     uint8_t length,
-                                     const void *data)) {
+void radioSetHandler(KRadioDevice *radio, uint8_t prot,
+                     void (*handler)(uint8_t prot, uint8_t src, uint8_t dst,
+                                     uint8_t length, const void *data)) {
   unsigned int i;
 
   /* Replace an existing handler? */
@@ -545,10 +531,8 @@ void radioSetHandler(KRadioDevice *radio,
 }
 
 void radioSetDefaultHandler(KRadioDevice *radio,
-                            void (*handler)(uint8_t prot,
-                                            uint8_t src,
-                                            uint8_t dst,
-                                            uint8_t length,
+                            void (*handler)(uint8_t prot, uint8_t src,
+                                            uint8_t dst, uint8_t length,
                                             const void *data)) {
   radio->default_handler = handler;
 }
@@ -566,9 +550,7 @@ int radioTemperature(KRadioDevice *radio) {
     spiSend(NULL, 1, buf);
     spiReceive(NULL, 2, buf);
     radio_unselect(radio);
-  }
-  while (buf[0] & REG_TEMP1_RUNNING);
-
+  } while (buf[0] & REG_TEMP1_RUNNING);
 
   return (temperature_offset - buf[1]);
 }
@@ -607,15 +589,9 @@ void radioSetAddress(KRadioDevice *radio, uint8_t addr) {
   radio_set_node_address(radio, addr);
 }
 
-uint8_t radioAddress(KRadioDevice *radio) {
+uint8_t radioAddress(KRadioDevice *radio) { return radio->address; }
 
-  return radio->address;
-}
-
-void radioSend(KRadioDevice *radio,
-               uint8_t addr,
-               uint8_t prot,
-               size_t bytes,
+void radioSend(KRadioDevice *radio, uint8_t addr, uint8_t prot, size_t bytes,
                const void *payload) {
 
   RadioPacket pkt;
@@ -623,30 +599,31 @@ void radioSend(KRadioDevice *radio,
 
   /* The length byte is not included in the length calculation. */
   pkt.length = bytes + sizeof(pkt) - 1;
-  pkt.src = radio->address;
-  pkt.dst = addr;
-  pkt.prot = prot;
+  pkt.src    = radio->address;
+  pkt.dst    = addr;
+  pkt.prot   = prot;
 
   /* Ideally, we'd poll for DIO1 to see when the FIFO can accept data.
    * This is not wired up on Orchard, so we can't transmit packets larger
    * than the FIFO.
    */
-//  osalDbgAssert(pkt.length < RADIO_FIFO_DEPTH, "Packet is too large");
+  //  osalDbgAssert(pkt.length < RADIO_FIFO_DEPTH, "Packet is too large");
 
-  //radio_set(radio, RADIO_DioMapping1, DIO0_RxCrkOk | DIO1_TxFifoNotEmpty);
+  // radio_set(radio, RADIO_DioMapping1, DIO0_RxCrkOk | DIO1_TxFifoNotEmpty);
   radio->mode = mode_standby;
-  /* Go into standby mode, to prevent the radio from receiving while we're loading the fifo */
-  radio_set(radio, RADIO_OpMode, OpMode_Sequencer_On
-                               | OpMode_Listen_Off
-                               | OpMode_StandBy);
+  /* Go into standby mode, to prevent the radio from receiving while we're
+   * loading the fifo */
+  radio_set(radio, RADIO_OpMode,
+            OpMode_Sequencer_On | OpMode_Listen_Off | OpMode_StandBy);
 
   /* Transmit the packet as soon as the first byte enters the FIFO */
   radio_set(radio, RADIO_FifoThresh, 0x80 | pkt.length);
 
   radio_select(radio);
-  reg = RADIO_Fifo | 0x80;  spiSend(NULL, 1, &reg);  /* Select the FIFO */
-  spiSend(NULL, sizeof(pkt), &pkt);  /* Load the header into the Fifo */
-  spiSend(NULL, bytes, payload);  /* Load the payload into the Fifo */
+  reg = RADIO_Fifo | 0x80;
+  spiSend(NULL, 1, &reg);           /* Select the FIFO */
+  spiSend(NULL, sizeof(pkt), &pkt); /* Load the header into the Fifo */
+  spiSend(NULL, bytes, payload);    /* Load the payload into the Fifo */
   radio_unselect(radio);
 
 #if 0
@@ -659,12 +636,11 @@ void radioSend(KRadioDevice *radio,
 
   radio->mode = mode_transmitting;
   /* Enter transmission mode, to actually send packets */
-  radio_set(radio, RADIO_OpMode, OpMode_Sequencer_On
-                               | OpMode_Listen_Off
-                               | OpMode_Transmitter);
+  radio_set(radio, RADIO_OpMode,
+            OpMode_Sequencer_On | OpMode_Listen_Off | OpMode_Transmitter);
 
   /* Wait for the radio to indicate the packet has been sent */
-  while(!(radio_get(radio, RADIO_IrqFlags2) & IrqFlags2_PacketSent))
+  while (!(radio_get(radio, RADIO_IrqFlags2) & IrqFlags2_PacketSent))
     ;
 
 #if 0
@@ -677,7 +653,6 @@ void radioSend(KRadioDevice *radio,
 
   /* Move back into "Rx" mode */
   radio->mode = mode_receiving;
-  radio_set(radio, RADIO_OpMode, OpMode_Sequencer_On
-                               | OpMode_Listen_Off
-                               | OpMode_Receiver);
+  radio_set(radio, RADIO_OpMode,
+            OpMode_Sequencer_On | OpMode_Listen_Off | OpMode_Receiver);
 }
