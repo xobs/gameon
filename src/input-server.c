@@ -1,10 +1,7 @@
+#include "input-server.h"
 #include "radio.h"
 
-struct usb_kbd_report {
-  uint8_t modifiers;
-  uint8_t reserved;
-  uint8_t keys[6];
-} __attribute__((packed));
+static struct input_server_config config;
 
 enum usb_kbd_modifiers {
   USB_MOD_LEFT_CTRL   = (1 << 0),
@@ -17,8 +14,6 @@ enum usb_kbd_modifiers {
   USB_MOD_RIGHT_GUI   = (1 << 7),
 };
 
-static struct usb_kbd_report current_report;
-
 static void input_request(uint8_t port, uint8_t src, uint8_t dst,
                           uint8_t length, const void *data) {
   (void)port;
@@ -29,13 +24,16 @@ static void input_request(uint8_t port, uint8_t src, uint8_t dst,
   uint32_t i;
 
   const uint32_t *state = (const uint32_t *)data;
+  int changes           = 0;
 
   // First pass: Remove any buttons that aren't pressed.
   for (i = 0; i < 6; i++) {
-    if (current_report.keys[i]) {
-      uint32_t pin_num = current_report.keys[i] - 4;
-      if (!(*state << pin_num))
-        current_report.keys[i] = 0;
+    if (config.kbd_report.keys[i]) {
+      uint32_t pin_num = config.kbd_report.keys[i] - 4;
+      if (!(*state << pin_num)) {
+        changes++;
+        config.kbd_report.keys[i] = 0;
+      }
     }
   }
 
@@ -46,28 +44,31 @@ static void input_request(uint8_t port, uint8_t src, uint8_t dst,
 
     uint8_t keycode = i + 4;
     // If we already have the report, don't do anything.
-    if ((current_report.keys[0] == keycode) ||
-        (current_report.keys[1] == keycode) ||
-        (current_report.keys[2] == keycode) ||
-        (current_report.keys[3] == keycode) ||
-        (current_report.keys[4] == keycode) ||
-        (current_report.keys[5] == keycode))
+    if ((config.kbd_report.keys[0] == keycode) ||
+        (config.kbd_report.keys[1] == keycode) ||
+        (config.kbd_report.keys[2] == keycode) ||
+        (config.kbd_report.keys[3] == keycode) ||
+        (config.kbd_report.keys[4] == keycode) ||
+        (config.kbd_report.keys[5] == keycode))
       continue;
 
     // Look for a spare place to put the key.
     uint32_t j;
     for (j = 0; j < 6; j++) {
-      if (current_report.keys[j] == 0) {
-        current_report.keys[j] = keycode;
+      if (config.kbd_report.keys[j] == 0) {
+        config.kbd_report.keys[j] = keycode;
+        changes++;
         break;
       }
     }
   }
 
-  int usbSend(const void *data, int len);
-  usbSend(&current_report, sizeof(current_report));
+  if (changes)
+    config.ready = 1;
 }
 
-void inputServerSetup(KRadioDevice *radio) {
+struct input_server_config *inputServerSetup(KRadioDevice *radio) {
   radioSetHandler(radio, radio_prot_input, input_request);
+
+  return &config;
 }

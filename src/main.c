@@ -1,16 +1,18 @@
 #include "dhcp-server.h"
+#include "input-server.h"
 #include "kl17.h"
 #include "palawan.h"
 #include "radio.h"
 #include "spi.h"
 #include <stdint.h>
 
-extern void usbStart(void);
+void usbStart(void);
 void usbProcess(void (*received_data)(void *data, uint32_t size));
+int usbSend(const void *data, int len);
+
 void echoServerSetup(KRadioDevice *radio);
 void firmwareServerSetup(KRadioDevice *radio);
 void aboutServerSetup(KRadioDevice *radio);
-void inputServerSetup(KRadioDevice *radio);
 
 static void received_data(void *data, uint32_t bytes) {
   (void)data;
@@ -25,9 +27,11 @@ static void configure_led(void) {
 }
 
 static void palawanRxMain(void) {
+  struct input_server_config *input_config;
+
   radioSetAddress(radioDevice, 0);
 
-  inputServerSetup(radioDevice);
+  input_config = inputServerSetup(radioDevice);
   dhcpServerSetup(radioDevice);
   firmwareServerSetup(radioDevice);
   echoServerSetup(radioDevice);
@@ -42,12 +46,19 @@ static void palawanRxMain(void) {
       packetAvailable = 0;
       radioPoll(radioDevice);
     }
+    if (input_config->ready) {
+      if (usbSend(&input_config->kbd_report,
+                  sizeof(input_config->kbd_report)) >= 0) {
+        input_config->ready = 0;
+      }
+    }
   }
 }
 
 static void palawanTxMain(void) {
 
-  uint32_t last_pin_state = 0;
+  uint32_t last_pin_state    = 0;
+  uint32_t pin_unchanged_for = 0;
 
   palawanTxPinSetup();
 
@@ -59,10 +70,16 @@ static void palawanTxMain(void) {
   while (1) {
     uint32_t pin_state = palawanTxReadPins();
     if (pin_state != last_pin_state) {
-      radioSend(radioDevice, 0, radio_prot_input, sizeof(pin_state),
-                &pin_state);
-      last_pin_state = pin_state;
-    }
+      pin_unchanged_for++;
+
+      // Debounce filter.  Only send if it's settled for a few attempts.
+      if ((pin_unchanged_for == 10) || !(pin_unchanged_for & 0xff)) {
+        radioSend(radioDevice, 0, radio_prot_input, sizeof(pin_state),
+                  &pin_state);
+        last_pin_state = pin_state;
+      }
+    } else
+      pin_unchanged_for = 0;
   }
 }
 
