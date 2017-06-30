@@ -3,6 +3,17 @@
 
 static struct input_server_config config;
 
+static const uint8_t key_mapping[16] = {
+    0x24, 0x23, 0x21, 0x26, 0x1f, 0x00, 0x00, 0x20,
+    0x25, 0x1e, 0x00, 0x00, 0x27, 0x2b, 0x22, 0x00,
+};
+
+/*
+  10   8   15   1
+    5    3    2
+  9   4   14   13
+ */
+
 enum usb_kbd_modifiers {
   USB_MOD_LEFT_CTRL   = (1 << 0),
   USB_MOD_LEFT_SHIFT  = (1 << 1),
@@ -42,7 +53,7 @@ static void input_request(uint8_t port, uint8_t src, uint8_t dst,
     if (!(*state & (1 << i)))
       continue;
 
-    uint8_t keycode = i + 4;
+    uint8_t keycode = key_mapping[i];
     // If we already have the report, don't do anything.
     if ((config.kbd_report.keys[0] == keycode) ||
         (config.kbd_report.keys[1] == keycode) ||
