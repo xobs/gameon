@@ -74,17 +74,17 @@ static void palawanTxMain(void) {
   // Next, enter a loop looking for changes
   while (1) {
     uint32_t pin_state = palawanTxReadPins();
-    if (pin_state != last_pin_state) {
-      // Debounce filter.  Only send if it's settled for a few attempts.
-      if (!(pin_unchanged_for & 0x1f)) {
-        radioSend(radioDevice, 0, radio_prot_input, sizeof(pin_state),
-                  &pin_state);
-        last_pin_state = pin_state;
-      }
-
-      pin_unchanged_for++;
-    } else
+    if (pin_state != last_pin_state)
       pin_unchanged_for = 0;
+    else
+      pin_unchanged_for++;
+
+    // Debounce filter.  Only send if it's settled for a few attempts.
+    if (!(pin_unchanged_for & 0xf)) {
+      radioSend(radioDevice, 0, radio_prot_input, sizeof(pin_state),
+                &pin_state);
+      last_pin_state = pin_state;
+    }
 
     asm("WFI");
   }
