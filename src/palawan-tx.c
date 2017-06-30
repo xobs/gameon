@@ -1,6 +1,7 @@
 #include "about.h"
 #include "gitversion.h"
 #include "kl17.h"
+#include "murmur3.h"
 #include "palawan.h"
 #include "radio.h"
 #include <string.h>
@@ -66,6 +67,12 @@ void palawanTxEnableTimer(void) {
 
 static uint8_t about_requesting;
 
+static void reboot_bootloader(void) {
+  boot_token.magic = BOOT_MAGIC;
+  asm("bkpt #4");
+  NVIC_SystemReset();
+}
+
 static void about_response(uint8_t port, uint8_t src, uint8_t dst,
                            uint8_t length, const void *data) {
   (void)port;
@@ -75,10 +82,18 @@ static void about_response(uint8_t port, uint8_t src, uint8_t dst,
 
   const struct about_response *response = data;
   if (memcmp(git_version, response->gitver, strlen(git_version))) {
-    boot_token.magic = BOOT_MAGIC;
-    asm("bkpt #4");
-    NVIC_SystemReset();
+    reboot_bootloader();
   }
+
+  extern uint32_t __app_start__;
+  extern uint32_t __app_end__;
+  uint32_t computed_firmware;
+  MurmurHash3_x86_32(&__app_start__,
+                     ((uint32_t)&__app_end__) - ((uint32_t)&__app_start__),
+                     FIRMWARE_SEED, &computed_firmware);
+  if (computed_firmware != response->firmware_hash)
+    reboot_bootloader();
+
   about_requesting = 0;
 }
 
